@@ -21,14 +21,55 @@
     </Design.DataContext>
 
     <Window.Styles>
-        <!-- Key Button (Interactive Keycap with Countdown) -->
+        <!-- Main Key Button (Large Prominent Rounded Interactive Keycap) -->
+        <Style Selector="Button.main-key-btn">
+            <Setter Property="Background" Value="#202227"/>
+            <Setter Property="BorderBrush" Value="#2E323A"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="CornerRadius" Value="8"/>
+            <Setter Property="Height" Value="38"/>
+            <Setter Property="MinWidth" Value="110"/>
+            <Setter Property="Padding" Value="8,0"/>
+            <Setter Property="HorizontalContentAlignment" Value="Center"/>
+            <Setter Property="VerticalContentAlignment" Value="Center"/>
+            <Setter Property="Cursor" Value="Hand"/>
+        </Style>
+        <Style Selector="Button.main-key-btn:pointerover /template/ ContentPresenter">
+            <Setter Property="Background" Value="#282B32"/>
+            <Setter Property="BorderBrush" Value="#3B404A"/>
+        </Style>
+        <Style Selector="Button.main-key-btn.running">
+            <Setter Property="Background" Value="#052E16"/>
+            <Setter Property="BorderBrush" Value="#22C55E"/>
+        </Style>
+        <Style Selector="Button.main-key-btn.recording">
+            <Setter Property="Background" Value="#3E1F07"/>
+            <Setter Property="BorderBrush" Value="#F59E0B"/>
+        </Style>
+        <Style Selector="Button.main-key-btn.recording:pointerover /template/ ContentPresenter">
+            <Setter Property="Background" Value="#4C260A"/>
+            <Setter Property="BorderBrush" Value="#F59E0B"/>
+        </Style>
+        <Style Selector="Button.main-key-btn TextBlock">
+            <Setter Property="FontSize" Value="18"/>
+            <Setter Property="FontWeight" Value="Bold"/>
+            <Setter Property="Foreground" Value="#4ADE80"/>
+            <Setter Property="HorizontalAlignment" Value="Center"/>
+            <Setter Property="VerticalAlignment" Value="Center"/>
+        </Style>
+        <Style Selector="Button.main-key-btn.recording TextBlock">
+            <Setter Property="Foreground" Value="#FBBF24"/>
+            <Setter Property="FontSize" Value="12"/>
+        </Style>
+
+        <!-- Compact Key Button (Used in Secondary Button inside Modifier) -->
         <Style Selector="Button.key-btn">
             <Setter Property="Background" Value="#202227"/>
             <Setter Property="BorderBrush" Value="#2E323A"/>
             <Setter Property="BorderThickness" Value="1"/>
             <Setter Property="CornerRadius" Value="6"/>
             <Setter Property="Height" Value="26"/>
-            <Setter Property="MinWidth" Value="86"/>
+            <Setter Property="MinWidth" Value="80"/>
             <Setter Property="Padding" Value="8,0"/>
             <Setter Property="HorizontalContentAlignment" Value="Center"/>
             <Setter Property="VerticalContentAlignment" Value="Center"/>
@@ -51,7 +92,7 @@
             <Setter Property="BorderBrush" Value="#F59E0B"/>
         </Style>
         <Style Selector="Button.key-btn TextBlock">
-            <Setter Property="FontSize" Value="12"/>
+            <Setter Property="FontSize" Value="11"/>
             <Setter Property="FontWeight" Value="Bold"/>
             <Setter Property="Foreground" Value="#4ADE80"/>
             <Setter Property="HorizontalAlignment" Value="Center"/>
@@ -61,7 +102,28 @@
             <Setter Property="Foreground" Value="#FBBF24"/>
         </Style>
 
-        <!-- Secondary Action Button (Reset - Compact Rounded) -->
+        <!-- Pill Reset Button (Centered below F6 and Primary Click) -->
+        <Style Selector="Button.pill-reset-btn">
+            <Setter Property="Background" Value="#202227"/>
+            <Setter Property="Foreground" Value="#D1D5DB"/>
+            <Setter Property="BorderBrush" Value="#2E323A"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="CornerRadius" Value="10"/>
+            <Setter Property="Padding" Value="14,1"/>
+            <Setter Property="FontSize" Value="9.5"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="Height" Value="20"/>
+            <Setter Property="HorizontalAlignment" Value="Center"/>
+            <Setter Property="VerticalContentAlignment" Value="Center"/>
+            <Setter Property="Cursor" Value="Hand"/>
+        </Style>
+        <Style Selector="Button.pill-reset-btn:pointerover /template/ ContentPresenter">
+            <Setter Property="Background" Value="#2B2F38"/>
+            <Setter Property="Foreground" Value="#FFFFFF"/>
+            <Setter Property="BorderBrush" Value="#3B404A"/>
+        </Style>
+
+        <!-- Secondary Action Button (Reset inside modifier - Compact Rounded) -->
         <Style Selector="Button.act-btn">
             <Setter Property="Background" Value="#202227"/>
             <Setter Property="Foreground" Value="#D1D5DB"/>
@@ -112,17 +174,18 @@
             <Setter Property="BorderBrush" Value="#4ADE80"/>
         </Style>
 
-        <!-- Settings Gear Button (Compact Rounded) -->
+        <!-- Settings Gear Button (Placed to the right of the Profile Selector) -->
         <Style Selector="Button.gear-btn">
             <Setter Property="Background" Value="#202227"/>
             <Setter Property="BorderBrush" Value="#2E323A"/>
             <Setter Property="BorderThickness" Value="1"/>
-            <Setter Property="CornerRadius" Value="6"/>
-            <Setter Property="Width" Value="26"/>
-            <Setter Property="Height" Value="26"/>
+            <Setter Property="CornerRadius" Value="7"/>
+            <Setter Property="Width" Value="28"/>
+            <Setter Property="Height" Value="28"/>
             <Setter Property="Padding" Value="0"/>
             <Setter Property="HorizontalContentAlignment" Value="Center"/>
             <Setter Property="VerticalContentAlignment" Value="Center"/>
+            <Setter Property="Cursor" Value="Hand"/>
         </Style>
         <Style Selector="Button.gear-btn:pointerover /template/ ContentPresenter">
             <Setter Property="Background" Value="#2B2F38"/>
@@ -138,10 +201,31 @@
 
         <!-- NumericUpDown Rounded Styling -->
         <Style Selector="NumericUpDown">
-            <Setter Property="CornerRadius" Value="6"/>
+            <Setter Property="CornerRadius" Value="8"/>
             <Setter Property="Background" Value="#202227"/>
             <Setter Property="BorderBrush" Value="#2E323A"/>
             <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="Foreground" Value="#FFFFFF"/>
+        </Style>
+        <Style Selector="NumericUpDown.main-interval">
+            <Setter Property="CornerRadius" Value="8"/>
+            <Setter Property="Background" Value="#202227"/>
+            <Setter Property="BorderBrush" Value="#2E323A"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="Height" Value="38"/>
+            <Setter Property="Width" Value="110"/>
+            <Setter Property="FontSize" Value="18"/>
+            <Setter Property="FontWeight" Value="Bold"/>
+            <Setter Property="Foreground" Value="#FFFFFF"/>
+            <Setter Property="HorizontalContentAlignment" Value="Center"/>
+            <Setter Property="VerticalContentAlignment" Value="Center"/>
+        </Style>
+        <Style Selector="NumericUpDown.main-interval /template/ TextBox">
+            <Setter Property="HorizontalContentAlignment" Value="Center"/>
+            <Setter Property="VerticalContentAlignment" Value="Center"/>
+            <Setter Property="FontSize" Value="18"/>
+            <Setter Property="FontWeight" Value="Bold"/>
+            <Setter Property="Foreground" Value="#FFFFFF"/>
         </Style>
 
         <!-- Segmented Mode Buttons (Compact Rounded) -->
@@ -150,10 +234,11 @@
             <Setter Property="Foreground" Value="#9CA3AF"/>
             <Setter Property="FontWeight" Value="SemiBold"/>
             <Setter Property="FontSize" Value="11"/>
-            <Setter Property="CornerRadius" Value="5"/>
-            <Setter Property="Padding" Value="10,2"/>
+            <Setter Property="CornerRadius" Value="6"/>
+            <Setter Property="Padding" Value="12,2"/>
             <Setter Property="Height" Value="22"/>
             <Setter Property="VerticalContentAlignment" Value="Center"/>
+            <Setter Property="Cursor" Value="Hand"/>
         </Style>
         <Style Selector="Button.seg-btn:pointerover /template/ ContentPresenter">
             <Setter Property="Background" Value="#262931"/>
@@ -180,15 +265,15 @@
             <Setter Property="Padding" Value="5,0,0,0"/>
         </Style>
 
-        <!-- Profile Selector Button (Full Row Compact Rounded) -->
+        <!-- Profile Selector Button (Top Center Compact Rounded Pill) -->
         <Style Selector="Button.profile-btn">
             <Setter Property="Background" Value="#202227"/>
             <Setter Property="Foreground" Value="#D1D5DB"/>
             <Setter Property="BorderBrush" Value="#2E323A"/>
             <Setter Property="BorderThickness" Value="1"/>
-            <Setter Property="CornerRadius" Value="6"/>
-            <Setter Property="Height" Value="26"/>
-            <Setter Property="Padding" Value="10,0"/>
+            <Setter Property="CornerRadius" Value="7"/>
+            <Setter Property="Height" Value="28"/>
+            <Setter Property="Padding" Value="12,0"/>
             <Setter Property="VerticalContentAlignment" Value="Center"/>
             <Setter Property="Cursor" Value="Hand"/>
         </Style>
@@ -226,80 +311,67 @@
 
     <!-- Root Panel containing Main Controls and aligned Popup -->
     <Panel x:Name="RootPanel">
-        <!-- Evenly Spaced Rectangular Layout -->
-        <Grid Margin="14,12,14,12" RowDefinitions="Auto,Auto,Auto,Auto,Auto" ColumnDefinitions="Auto,*,Auto">
+        <StackPanel Margin="14,12,14,12" Spacing="0">
 
-            <!-- Row 0 Left: Trigger Hotkey Button + Reset -->
-            <StackPanel Grid.Row="0" Grid.Column="0" Orientation="Vertical" Spacing="3" Margin="0,0,0,8">
-                <TextBlock Text="TRIGGER HOTKEY" FontSize="8.5" FontWeight="Bold" Foreground="#9CA3AF"/>
-                <StackPanel Orientation="Horizontal" Spacing="4">
-                    <Button Classes="key-btn"
+            <!-- Row 0: Top Bar with Status (Left) and Profile Selector (Center) -->
+            <Grid ColumnDefinitions="1*,Auto,1*" Margin="0,0,0,10">
+                <!-- Status indicator if active -->
+                <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="4" VerticalAlignment="Center" HorizontalAlignment="Left">
+                    <Ellipse Width="6" Height="6" Fill="#22C55E" IsVisible="{Binding IsActiveRunning}"/>
+                    <TextBlock Text="ON" FontSize="9.5" FontWeight="Bold" Foreground="#22C55E" IsVisible="{Binding IsActiveRunning}"/>
+                </StackPanel>
+
+                <!-- Profile Selector Button (Top Center Compact Rounded Pill) -->
+                <Button Grid.Column="1"
+                        Classes="profile-btn"
+                        Classes.open="{Binding IsProfilesPopupOpen}"
+                        Command="{Binding ToggleProfilesPopupCommand}"
+                        HorizontalAlignment="Center"
+                        ToolTip.Tip="Manage profiles (save/load game configurations)">
+                    <StackPanel Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
+                        <TextBlock Text="PROFILE:" FontSize="10" FontWeight="Bold" Foreground="#9CA3AF" VerticalAlignment="Center"/>
+                        <TextBlock Text="{Binding ActiveProfileName}" FontSize="11" FontWeight="Bold" Foreground="#4ADE80" VerticalAlignment="Center"/>
+                        <TextBlock Text="▼" FontSize="8.5" Foreground="#9CA3AF" VerticalAlignment="Center" Margin="2,0,0,0"/>
+                    </StackPanel>
+                </Button>
+            </Grid>
+
+            <!-- Row 1: Left Column (Trigger) & Right Column (Interval) -->
+            <Grid ColumnDefinitions="*,*" Margin="0,0,0,8">
+                <!-- Left Column: TRIGGER -->
+                <StackPanel Grid.Column="0" Orientation="Vertical" Spacing="4" HorizontalAlignment="Center">
+                    <TextBlock Text="TRIGGER" FontSize="10" FontWeight="Bold" Foreground="#9CA3AF" HorizontalAlignment="Center"/>
+                    <Button x:Name="TriggerKeyButton"
+                            Classes="main-key-btn"
                             Classes.running="{Binding IsActiveRunning}"
                             Classes.recording="{Binding IsRecordingHotkey}"
                             Command="{Binding ToggleRecordingHotkeyCommand}"
-                            MinWidth="68"
-                            ToolTip.Tip="Trigger Hotkey: Press this key or mouse button to activate/stop the macro">
+                            ToolTip.Tip="Trigger Hotkey: Click to bind • Right-click to reset (F6)">
                         <TextBlock Text="{Binding KeyButtonText}"/>
                     </Button>
-                    <Button Command="{Binding ResetHotkeyCommand}"
-                            Classes="act-btn"
-                            Content="Reset"
-                            Padding="6,2"
-                            VerticalAlignment="Center"
-                            ToolTip.Tip="Reset trigger hotkey to F6"/>
                 </StackPanel>
-            </StackPanel>
 
-            <!-- Row 0 Middle: Status indicator if active -->
-            <StackPanel Grid.Row="0" Grid.Column="1" Orientation="Horizontal" Spacing="4" HorizontalAlignment="Center" VerticalAlignment="Center" Margin="0,11,0,8">
-                <Ellipse Width="5" Height="5" Fill="#22C55E" IsVisible="{Binding IsActiveRunning}"/>
-                <TextBlock Text="ON" FontSize="9.5" FontWeight="Bold" Foreground="#22C55E" IsVisible="{Binding IsActiveRunning}"/>
-            </StackPanel>
-
-            <!-- Row 0 Right: Primary Click Button + Reset -->
-            <StackPanel Grid.Row="0" Grid.Column="2" Orientation="Vertical" Spacing="3" HorizontalAlignment="Right" Margin="0,0,0,8">
-                <TextBlock Text="PRIMARY CLICK" FontSize="8.5" FontWeight="Bold" Foreground="#4ADE80" HorizontalAlignment="Right"/>
-                <StackPanel Orientation="Horizontal" Spacing="4" HorizontalAlignment="Right">
-                    <Button Classes="key-btn"
-                            Classes.recording="{Binding IsRecordingPrimary}"
-                            Command="{Binding ToggleRecordingPrimaryCommand}"
-                            MinWidth="68"
-                            ToolTip.Tip="Primary Click: The mouse button or key sent to the game">
-                        <TextBlock Text="{Binding PrimaryKeyButtonText}"/>
-                    </Button>
-                    <Button Command="{Binding ResetPrimaryButtonCommand}"
-                            Classes="act-btn"
-                            Content="Reset"
-                            Padding="6,2"
-                            VerticalAlignment="Center"
-                            ToolTip.Tip="Reset primary click to Left Click (M1)"/>
+                <!-- Right Column: INTERVAL (ms) -->
+                <StackPanel Grid.Column="1" Orientation="Vertical" Spacing="4" HorizontalAlignment="Center">
+                    <TextBlock Text="INTERVAL (ms)" FontSize="10" FontWeight="Bold" Foreground="#9CA3AF" HorizontalAlignment="Center"/>
+                    <NumericUpDown Classes="main-interval"
+                                   Value="{Binding IntervalMs}"
+                                   Minimum="1" Maximum="3600000"
+                                   Increment="10"
+                                   FormatString="0"
+                                   ShowButtonSpinner="False"
+                                   ToolTip.Tip="Click interval in milliseconds"/>
                 </StackPanel>
-            </StackPanel>
+            </Grid>
 
-            <!-- Row 1 Left: Interval (ms) -->
-            <StackPanel Grid.Row="1" Grid.Column="0" Orientation="Horizontal" Spacing="6" VerticalAlignment="Center" Margin="0,0,0,8">
-                <NumericUpDown Value="{Binding IntervalMs}"
-                               Minimum="1" Maximum="3600000"
-                               Increment="10"
-                               FormatString="0"
-                               ShowButtonSpinner="False"
-                               CornerRadius="6"
-                               Height="26"
-                               Width="56"
-                               FontSize="11.5"
-                               VerticalContentAlignment="Center"/>
-                <TextBlock Text="(ms)" VerticalAlignment="Center" Foreground="#9CA3AF" FontSize="11.5" FontWeight="SemiBold"/>
-            </StackPanel>
-
-            <!-- Row 1 Right: Mode Switch -->
-            <Border Grid.Row="1" Grid.Column="2"
-                    Background="#181A20"
+            <!-- Row 2: Mode Switch (Toggle | Hold) sits between Trigger/Interval and Primary -->
+            <Border Background="#181A20"
                     BorderBrush="#2D3039"
                     BorderThickness="1"
                     CornerRadius="7"
                     Padding="2"
                     Height="26"
-                    HorizontalAlignment="Right"
+                    HorizontalAlignment="Center"
                     VerticalAlignment="Center"
                     Margin="0,0,0,8">
                 <Grid ColumnDefinitions="Auto,Auto">
@@ -316,47 +388,42 @@
                 </Grid>
             </Border>
 
-            <!-- Row 2: Profiles Menu Button (Third row) -->
-            <Button Grid.Row="2" Grid.Column="0" Grid.ColumnSpan="3"
-                    Classes="profile-btn"
-                    Classes.open="{Binding IsProfilesPopupOpen}"
-                    Command="{Binding ToggleProfilesPopupCommand}"
-                    Margin="0,0,0,8"
-                    ToolTip.Tip="Manage profiles (save/load game configurations)">
-                <Grid ColumnDefinitions="Auto,*,Auto">
-                    <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
-                        <TextBlock Text="PROFILE:" FontSize="10" FontWeight="Bold" Foreground="#9CA3AF" VerticalAlignment="Center"/>
-                        <TextBlock Text="{Binding ActiveProfileName}" FontSize="11" FontWeight="Bold" Foreground="#4ADE80" VerticalAlignment="Center"/>
-                    </StackPanel>
-                    <TextBlock Grid.Column="2" Text="▼" FontSize="8.5" Foreground="#9CA3AF" VerticalAlignment="Center"/>
-                </Grid>
-            </Button>
-
-            <!-- Row 3: Enable Modifier CheckBox (Left) + Settings Gear (Right) -->
-            <StackPanel Grid.Row="3" Grid.Column="0" Grid.ColumnSpan="2" Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
-                <CheckBox IsChecked="{Binding IsModifierEnabled}"
-                          Content="Enable Modifier"
-                          FontWeight="SemiBold"
-                          FontSize="11"
-                          Foreground="#E5E7EB"
-                          VerticalAlignment="Center"
-                          ToolTip.Tip="Enable extra secondary button action (e.g. Aim ADS + Fire or Dual Spam)"/>
-                <TextBlock Text="(ADS / 2nd Button)" FontSize="9" Foreground="#6B7280" VerticalAlignment="Center"/>
+            <!-- Row 3: PRIMARY Section (Centered) -->
+            <StackPanel Orientation="Vertical" Spacing="4" HorizontalAlignment="Center" Margin="0,0,0,10">
+                <TextBlock Text="PRIMARY" FontSize="10" FontWeight="Bold" Foreground="#4ADE80" HorizontalAlignment="Center"/>
+                <Button x:Name="PrimaryKeyButton"
+                        Classes="main-key-btn"
+                        Classes.recording="{Binding IsRecordingPrimary}"
+                        Command="{Binding ToggleRecordingPrimaryCommand}"
+                        MinWidth="120"
+                        ToolTip.Tip="Primary Click: Click to bind • Right-click to reset (M1 Left)">
+                    <TextBlock Text="{Binding PrimaryKeyButtonText}" FontSize="15"/>
+                </Button>
             </StackPanel>
 
-            <Button Grid.Row="3" Grid.Column="2"
-                    Classes="gear-btn"
-                    Classes.active="{Binding IsSettingsOpen}"
-                    Command="{Binding ToggleSettingsCommand}"
-                    HorizontalAlignment="Right"
-                    ToolTip.Tip="Settings">
-                <PathIcon Width="12" Height="12" Foreground="#9CA3AF"
-                          Data="M12,15.5A3.5,3.5 0 0,1 8.5,12A3.5,3.5 0 0,1 12,8.5A3.5,3.5 0 0,1 15.5,12A3.5,3.5 0 0,1 12,8.5A3.5,3.5 0 0,1 15.5,12A3.5,3.5 0 0,1 12,15.5M19.43,12.97C19.47,12.65 19.5,12.33 19.5,12C19.5,11.67 19.47,11.34 19.43,11L21.54,9.37C21.73,9.22 21.78,8.95 21.66,8.73L19.66,5.27C19.54,5.05 19.27,4.96 19.05,5.05L16.56,6.05C16.04,5.66 15.5,5.32 14.87,5.07L14.5,2.42C14.46,2.18 14.25,2 14,2H10C9.75,2 9.54,2.18 9.5,2.42L9.13,5.07C8.5,5.32 7.96,5.66 7.44,6.05L4.95,5.05C4.73,4.96 4.46,5.05 4.34,5.27L2.34,8.73C2.21,8.95 2.27,9.22 2.46,9.37L4.57,11C4.53,11.34 4.5,11.67 4.5,12C4.5,12.33 4.53,12.65 4.57,12.97L2.46,14.63C2.27,14.78 2.21,15.05 2.34,15.27L4.34,18.73C4.46,18.95 4.73,19.03 4.95,18.95L7.44,17.94C7.96,18.34 8.5,18.68 9.13,18.93L9.5,21.58C9.54,21.82 9.75,22 10,22H14C14.25,22 14.46,21.82 14.5,21.58L14.87,18.93C15.5,18.67 16.04,18.34 16.56,17.94L19.05,18.95C19.27,19.03 19.54,18.95 19.66,18.73L21.66,15.27C21.78,15.05 21.73,14.78 21.54,14.63L19.43,12.97Z"/>
-            </Button>
+            <!-- Row 4: Enable Modifier & Settings (Settings on far right) -->
+            <Grid ColumnDefinitions="*,Auto" Margin="6,0,6,0">
+                <CheckBox Grid.Column="0"
+                          IsChecked="{Binding IsModifierEnabled}"
+                          VerticalAlignment="Center"
+                          ToolTip.Tip="Enable extra secondary button action (e.g. Aim ADS + Fire or Dual Spam)">
+                    <TextBlock Text="Enable Modifier" FontWeight="Bold" FontSize="11" Foreground="#FFFFFF" VerticalAlignment="Center"/>
+                </CheckBox>
+
+                <Button Grid.Column="1"
+                        Classes="gear-btn"
+                        Classes.active="{Binding IsSettingsOpen}"
+                        Command="{Binding ToggleSettingsCommand}"
+                        HorizontalAlignment="Right"
+                        VerticalAlignment="Center"
+                        ToolTip.Tip="Settings">
+                    <PathIcon Width="13" Height="13" Foreground="#9CA3AF"
+                              Data="M12,15.5A3.5,3.5 0 0,1 8.5,12A3.5,3.5 0 0,1 12,8.5A3.5,3.5 0 0,1 15.5,12A3.5,3.5 0 0,1 12,8.5A3.5,3.5 0 0,1 12,15.5M19.43,12.97C19.47,12.65 19.5,12.33 19.5,12C19.5,11.67 19.47,11.34 19.43,11L21.54,9.37C21.73,9.22 21.78,8.95 21.66,8.73L19.66,5.27C19.54,5.05 19.27,4.96 19.05,5.05L16.56,6.05C16.04,5.66 15.5,5.32 14.87,5.07L14.5,2.42C14.46,2.18 14.25,2 14,2H10C9.75,2 9.54,2.18 9.5,2.42L9.13,5.07C8.5,5.32 7.96,5.66 7.44,6.05L4.95,5.05C4.73,4.96 4.46,5.05 4.34,5.27L2.34,8.73C2.21,8.95 2.27,9.22 2.46,9.37L4.57,11C4.53,11.34 4.5,11.67 4.5,12C4.5,12.33 4.53,12.65 4.57,12.97L2.46,14.63C2.27,14.78 2.21,15.05 2.34,15.27L4.34,18.73C4.46,18.95 4.73,19.03 4.95,18.95L7.44,17.94C7.96,18.34 8.5,18.68 9.13,18.93L9.5,21.58C9.54,21.82 9.75,22 10,22H14C14.25,22 14.46,21.82 14.5,21.58L14.87,18.93C15.5,18.67 16.04,18.34 16.56,17.94L19.05,18.95C19.27,19.03 19.54,18.95 19.66,18.73L21.66,15.27C21.78,15.05 21.73,14.78 21.54,14.63L19.43,12.97Z"/>
+                </Button>
+            </Grid>
 
             <!-- Row 4: Collapsible Modifier Container (Appears when IsModifierEnabled is True) -->
-            <Border Grid.Row="4" Grid.Column="0" Grid.ColumnSpan="3"
-                    IsVisible="{Binding IsModifierEnabled}"
+            <Border IsVisible="{Binding IsModifierEnabled}"
                     Background="#181A20"
                     BorderBrush="#2D3039"
                     BorderThickness="1"
@@ -364,7 +431,7 @@
                     Padding="10,8"
                     Margin="0,8,0,0">
                 <StackPanel Spacing="7">
-                    <!-- Row 4.1: Secondary Button (Interactive keycap button + Reset) -->
+                    <!-- Secondary Button (Interactive keycap button + Reset) -->
                     <Grid ColumnDefinitions="Auto,*">
                         <TextBlock Text="SECONDARY BUTTON" FontSize="9.5" FontWeight="Bold" Foreground="#9CA3AF" VerticalAlignment="Center"/>
                         <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="6" HorizontalAlignment="Right" VerticalAlignment="Center">
@@ -384,7 +451,7 @@
                         </StackPanel>
                     </Grid>
 
-                    <!-- Row 4.2: Behavior (Hold vs Spam) -->
+                    <!-- Behavior (Hold vs Spam) -->
                     <Grid ColumnDefinitions="Auto,*">
                         <TextBlock Text="ACTION" FontSize="9.5" FontWeight="Bold" Foreground="#9CA3AF" VerticalAlignment="Center"/>
                         <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="10" HorizontalAlignment="Right" VerticalAlignment="Center">
@@ -393,7 +460,7 @@
                         </StackPanel>
                     </Grid>
 
-                    <!-- Row 4.3: Trigger Sequence / Order -->
+                    <!-- Trigger Sequence / Order -->
                     <Grid ColumnDefinitions="Auto,*">
                         <TextBlock Text="FIRST TRIGGER" FontSize="9.5" FontWeight="Bold" Foreground="#9CA3AF" VerticalAlignment="Center"/>
                         <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="10" HorizontalAlignment="Right" VerticalAlignment="Center">
@@ -402,7 +469,7 @@
                         </StackPanel>
                     </Grid>
 
-                    <!-- Row 4.4: Pre-Delay -->
+                    <!-- Pre-Delay -->
                     <Grid ColumnDefinitions="*,Auto">
                         <StackPanel Grid.Column="0" VerticalAlignment="Center">
                             <TextBlock Text="PRE-DELAY" FontSize="9.5" FontWeight="Bold" Foreground="#9CA3AF"/>
@@ -424,7 +491,7 @@
                     </Grid>
                 </StackPanel>
             </Border>
-        </Grid>
+        </StackPanel>
 
         <!-- Settings Popup: Appears perfectly in line, underneath the main window width -->
         <Popup x:Name="SettingsPopup"
