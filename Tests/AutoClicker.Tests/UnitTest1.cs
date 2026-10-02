@@ -483,4 +483,30 @@ public class MainViewModelTests
         vm.IsModifierEnabled = false;
         Assert.False(vm.IsModifierEnabled);
     }
+
+    [Fact]
+    public void MainViewModel_ResetPrimaryAndHotkey_ResetsToDefaults()
+    {
+        using var vm = new MainViewModel(new AppConfig());
+
+        // Change Primary to something else (e.g. M2 Right)
+        vm.SetPresetPrimaryButtonCommand.Execute("2");
+        Assert.Equal("M2 (Right)", vm.PrimaryKeyButtonText);
+        Assert.Equal(2, vm.PrimaryVkCode);
+
+        // Reset Primary -> back to M1 (Left)
+        vm.ResetPrimaryButtonCommand.Execute(null);
+        Assert.Equal("M1 (Left)", vm.PrimaryKeyButtonText);
+        Assert.Equal(1, vm.PrimaryVkCode);
+
+        // Change Hotkey to something else (e.g. Space = 0x20)
+        vm.SetPresetHotkeyCommand.Execute("32");
+        Assert.Equal("Space", vm.KeyButtonText);
+        Assert.Equal(0x20, vm.HotkeyVkCode);
+
+        // Reset Hotkey -> back to F6 (0x75)
+        vm.ResetHotkeyCommand.Execute(null);
+        Assert.Equal("F6", vm.KeyButtonText);
+        Assert.Equal(0x75, vm.HotkeyVkCode);
+    }
 }

@@ -21,8 +21,14 @@
     </Design.DataContext>
 
     <Window.Styles>
+        <!-- Default Button: Never steal focus in key-binding utility app -->
+        <Style Selector="Button">
+            <Setter Property="Focusable" Value="False"/>
+        </Style>
+
         <!-- Main Key Button (Large Prominent Rounded Interactive Keycap) -->
         <Style Selector="Button.main-key-btn">
+            <Setter Property="Focusable" Value="False"/>
             <Setter Property="Background" Value="#202227"/>
             <Setter Property="BorderBrush" Value="#2E323A"/>
             <Setter Property="BorderThickness" Value="1"/>
@@ -64,6 +70,7 @@
 
         <!-- Compact Key Button (Used in Secondary Button inside Modifier) -->
         <Style Selector="Button.key-btn">
+            <Setter Property="Focusable" Value="False"/>
             <Setter Property="Background" Value="#202227"/>
             <Setter Property="BorderBrush" Value="#2E323A"/>
             <Setter Property="BorderThickness" Value="1"/>

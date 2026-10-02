@@ -2,6 +2,7 @@ using System;
 using System.Diagnostics;
 using System.Runtime.InteropServices;
 using System.Threading;
+using System.Threading.Tasks;
 using AutoClicker.Services.Native;
 
 namespace AutoClicker.Services;
@@ -34,6 +35,10 @@ public class GlobalKeyboardHook : IDisposable
 
     private RecordingSlot _currentRecordingSlot = RecordingSlot.None;
     private readonly object _recordingLock = new();
+
+    private volatile int _swallowNextKeyUpVkCode = 0;
+    private volatile int _swallowNextMouseUpMsg = 0;
+    private CancellationTokenSource? _swallowTimeoutCts;
 
     public int HotkeyVkCode { get; set; } = 0x75; // Default: F6
 
@@ -161,19 +166,42 @@ public class GlobalKeyboardHook : IDisposable
         _hookStartedEvent.Wait(2000);
     }
 
+    private void ArmSwallowSafetyTimeout()
+    {
+        _swallowTimeoutCts?.Cancel();
+        _swallowTimeoutCts = new CancellationTokenSource();
+        var cts = _swallowTimeoutCts;
+        Task.Delay(350, cts.Token).ContinueWith(t =>
+        {
+            if (!t.IsCanceled)
+            {
+                _swallowNextKeyUpVkCode = 0;
+                _swallowNextMouseUpMsg = 0;
+                StopRecordingHooks();
+            }
+        }, TaskScheduler.Default);
+    }
+
     private void StopRecordingHooks()
     {
-        _isHookRunning = false;
-        if (_hookThreadId != 0)
+        lock (_recordingLock)
         {
-            Win32Api.PostThreadMessage(_hookThreadId, 0x0012 /* WM_QUIT */, UIntPtr.Zero, IntPtr.Zero);
+            _swallowTimeoutCts?.Cancel();
+            _isHookRunning = false;
+            uint threadId = _hookThreadId;
+            Thread? thread = _hookThread;
+
+            if (threadId != 0)
+            {
+                Win32Api.PostThreadMessage(threadId, 0x0012 /* WM_QUIT */, UIntPtr.Zero, IntPtr.Zero);
+            }
+            if (thread != null && thread.IsAlive && Thread.CurrentThread != thread)
+            {
+                thread.Join(500);
+            }
+            _hookThread = null;
+            _hookThreadId = 0;
         }
-        if (_hookThread != null && _hookThread.IsAlive && Thread.CurrentThread != _hookThread)
-        {
-            _hookThread.Join(500);
-        }
-        _hookThread = null;
-        _hookThreadId = 0;
     }
 
     private void HookThreadLoop()
@@ -237,16 +265,32 @@ public class GlobalKeyboardHook : IDisposable
             var hookStruct = Marshal.PtrToStructure<Win32Api.KBDLLHOOKSTRUCT>(lParam);
             int vkCode = (int)hookStruct.vkCode;
 
+            // Check if we need to swallow the matching KeyUp of a just-recorded key
+            if (_swallowNextKeyUpVkCode != 0 && (msg == Win32Api.WM_KEYUP || msg == Win32Api.WM_SYSKEYUP))
+            {
+                if (vkCode == _swallowNextKeyUpVkCode)
+                {
+                    _swallowNextKeyUpVkCode = 0;
+                    _swallowTimeoutCts?.Cancel();
+                    StopRecordingHooks();
+                    return (IntPtr)1; // Swallow key release so UI never sees it
+                }
+            }
+
             if (IsRecording)
             {
                 if (msg == Win32Api.WM_KEYDOWN || msg == Win32Api.WM_SYSKEYDOWN)
                 {
-                    var slot = CurrentRecordingSlot;
+                    var slot = _currentRecordingSlot;
+                    _currentRecordingSlot = RecordingSlot.None;
+
                     if (vkCode == 0x1B) // Escape cancels recording
                     {
-                        CurrentRecordingSlot = RecordingSlot.None;
                         RecordingCancelled?.Invoke();
                         SlotCancelled?.Invoke(slot);
+
+                        _swallowNextKeyUpVkCode = vkCode;
+                        ArmSwallowSafetyTimeout();
                         return (IntPtr)1;
                     }
 
@@ -256,9 +300,11 @@ public class GlobalKeyboardHook : IDisposable
                         HotkeyRecorded?.Invoke(vkCode);
                     }
 
-                    CurrentRecordingSlot = RecordingSlot.None;
                     SlotRecorded?.Invoke(slot, vkCode);
-                    return (IntPtr)1; // Swallow key used for setting hotkey/modifier
+
+                    _swallowNextKeyUpVkCode = vkCode;
+                    ArmSwallowSafetyTimeout();
+                    return (IntPtr)1; // Swallow key press used for setting hotkey/modifier/primary
                 }
             }
         }
@@ -286,54 +332,72 @@ public class GlobalKeyboardHook : IDisposable
                 return Win32Api.CallNextHookEx(_mouseHookId, nCode, wParam, lParam);
             }
 
+            // Check if we need to swallow the matching MouseUp of a just-recorded mouse click
+            if (_swallowNextMouseUpMsg != 0 && msg == _swallowNextMouseUpMsg)
+            {
+                _swallowNextMouseUpMsg = 0;
+                _swallowTimeoutCts?.Cancel();
+                StopRecordingHooks();
+                return (IntPtr)1; // Swallow mouse release so UI never sees it
+            }
+
             int vkCode = 0;
+            int matchingUpMsg = 0;
             bool isDown = false;
 
             switch (msg)
             {
                 case Win32Api.WM_LBUTTONDOWN:
                     vkCode = Win32Api.VK_LBUTTON;
+                    matchingUpMsg = Win32Api.WM_LBUTTONUP;
                     isDown = true;
                     break;
                 case Win32Api.WM_RBUTTONDOWN:
                     vkCode = Win32Api.VK_RBUTTON;
+                    matchingUpMsg = Win32Api.WM_RBUTTONUP;
                     isDown = true;
                     break;
                 case Win32Api.WM_MBUTTONDOWN:
                     vkCode = Win32Api.VK_MBUTTON;
+                    matchingUpMsg = Win32Api.WM_MBUTTONUP;
                     isDown = true;
                     break;
                 case Win32Api.WM_XBUTTONDOWN:
                     uint xbtnDown = (hookStruct.mouseData >> 16) & 0xFFFF;
                     vkCode = xbtnDown == 1 ? Win32Api.VK_XBUTTON1 : Win32Api.VK_XBUTTON2;
+                    matchingUpMsg = Win32Api.WM_XBUTTONUP;
                     isDown = true;
                     break;
             }
 
             if (vkCode != 0 && IsRecording && isDown)
             {
-                // If Left Click, check if the user clicked inside our application window
-                if (vkCode == Win32Api.VK_LBUTTON)
+                var slot = _currentRecordingSlot;
+                _currentRecordingSlot = RecordingSlot.None;
+
+                // If user clicks Left Click while recording Hotkey:
+                // Cancel hotkey recording safely so Left Click is never accidentally assigned as global trigger
+                if (slot == RecordingSlot.Hotkey && vkCode == Win32Api.VK_LBUTTON)
                 {
-                    IntPtr hWndUnderMouse = Win32Api.WindowFromPoint(hookStruct.pt);
-                    Win32Api.GetWindowThreadProcessId(hWndUnderMouse, out uint procId);
-                    if (procId == (uint)Environment.ProcessId)
-                    {
-                        // Let normal UI button click proceed
-                        return Win32Api.CallNextHookEx(_mouseHookId, nCode, wParam, lParam);
-                    }
+                    RecordingCancelled?.Invoke();
+                    SlotCancelled?.Invoke(slot);
+
+                    _swallowNextMouseUpMsg = matchingUpMsg;
+                    ArmSwallowSafetyTimeout();
+                    return (IntPtr)1; // Swallow left click
                 }
 
-                var slot = CurrentRecordingSlot;
                 if (slot == RecordingSlot.Hotkey)
                 {
                     HotkeyVkCode = vkCode;
                     HotkeyRecorded?.Invoke(vkCode);
                 }
 
-                CurrentRecordingSlot = RecordingSlot.None;
                 SlotRecorded?.Invoke(slot, vkCode);
-                return (IntPtr)1; // Swallow mouse click used for setting hotkey/modifier
+
+                _swallowNextMouseUpMsg = matchingUpMsg;
+                ArmSwallowSafetyTimeout();
+                return (IntPtr)1; // Swallow mouse click used for setting hotkey/modifier/primary
             }
         }
 
@@ -342,6 +406,8 @@ public class GlobalKeyboardHook : IDisposable
 
     public void Dispose()
     {
+        _swallowTimeoutCts?.Cancel();
+        _swallowTimeoutCts?.Dispose();
         _isPollerRunning = false;
         _pollerThread?.Join(500);
 
