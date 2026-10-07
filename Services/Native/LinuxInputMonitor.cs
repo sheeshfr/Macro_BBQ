@@ -1,6 +1,8 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
+using System.Linq;
 using System.Runtime.InteropServices;
 using System.Threading;
 
@@ -8,14 +10,15 @@ namespace AutoClicker.Services.Native;
 
 public class LinuxInputMonitor : IGlobalInputHook
 {
-    private readonly List<int> _deviceFds = new();
-    private readonly HashSet<string> _knownDevicePaths = new();
+    private readonly Dictionary<string, int> _deviceMap = new();
+    private readonly HashSet<string> _ignoredPaths = new();
     private readonly HashSet<(int fd, int vkCode)> _downKeys = new();
     private readonly object _lock = new();
 
     private Thread? _workerThread;
     private volatile bool _isRunning = false;
     private bool _isHotkeyDown = false;
+    private long _recordingStartedTimestamp = 0;
 
     private RecordingSlot _currentRecordingSlot = RecordingSlot.None;
 
@@ -26,13 +29,20 @@ public class LinuxInputMonitor : IGlobalInputHook
     public RecordingSlot CurrentRecordingSlot
     {
         get => _currentRecordingSlot;
-        set => _currentRecordingSlot = value;
+        set
+        {
+            _currentRecordingSlot = value;
+            if (value != RecordingSlot.None)
+            {
+                _recordingStartedTimestamp = Stopwatch.GetTimestamp();
+            }
+        }
     }
 
     public bool IsRecording
     {
         get => _currentRecordingSlot != RecordingSlot.None;
-        set => _currentRecordingSlot = value ? RecordingSlot.Hotkey : RecordingSlot.None;
+        set => CurrentRecordingSlot = value ? RecordingSlot.Hotkey : RecordingSlot.None;
     }
 
     public event Action<int>? HotkeyRecorded;
@@ -50,9 +60,9 @@ public class LinuxInputMonitor : IGlobalInputHook
 
     public void ResetKeyState()
     {
-        _isHotkeyDown = false;
         lock (_lock)
         {
+            _isHotkeyDown = false;
             _downKeys.Clear();
         }
     }
@@ -73,16 +83,38 @@ public class LinuxInputMonitor : IGlobalInputHook
     {
         lock (_lock)
         {
-            // Close existing
-            CloseAllDevices();
-
             try
             {
                 if (!Directory.Exists("/dev/input")) return;
 
                 var eventFiles = Directory.GetFiles("/dev/input", "event*");
+                var currentSet = new HashSet<string>(eventFiles);
+
+                // 1. Remove disconnected devices without affecting active ones
+                var removedPaths = new List<string>();
+                foreach (var kvp in _deviceMap)
+                {
+                    if (!currentSet.Contains(kvp.Key))
+                    {
+                        try { LinuxNative.Close(kvp.Value); } catch { }
+                        removedPaths.Add(kvp.Key);
+                    }
+                }
+                foreach (var path in removedPaths)
+                {
+                    _deviceMap.Remove(path);
+                }
+
+                _ignoredPaths.RemoveWhere(p => !currentSet.Contains(p));
+
+                // 2. Discover new devices (existing devices remain untouched and open)
                 foreach (var path in eventFiles)
                 {
+                    if (_deviceMap.ContainsKey(path) || _ignoredPaths.Contains(path))
+                    {
+                        continue;
+                    }
+
                     try
                     {
                         int fd = LinuxNative.Open(path, LinuxNative.O_RDONLY | LinuxNative.O_NONBLOCK);
@@ -97,36 +129,35 @@ public class LinuxInputMonitor : IGlobalInputHook
                                 if (name.Contains("Macro BBQ", StringComparison.OrdinalIgnoreCase))
                                 {
                                     LinuxNative.Close(fd);
+                                    _ignoredPaths.Add(path);
                                     continue;
                                 }
                             }
 
                             // Filter: we only care about devices capable of EV_KEY
-                            // EVIOCGBIT(EV_KEY, 8) ioctl
                             byte[] evBits = new byte[8];
                             int res = LinuxNative.Ioctl(fd, 0x80084520 /* EVIOCGBIT(0, 8) */, Marshal.UnsafeAddrOfPinnedArrayElement(evBits, 0));
                             bool hasKey = res >= 0 && (evBits[0] & (1 << LinuxNative.EV_KEY)) != 0;
 
                             if (hasKey)
                             {
-                                _deviceFds.Add(fd);
-                                _knownDevicePaths.Add(path);
+                                _deviceMap[path] = fd;
                             }
                             else
                             {
                                 LinuxNative.Close(fd);
+                                _ignoredPaths.Add(path);
                             }
+                        }
+                        else
+                        {
+                            _ignoredPaths.Add(path);
                         }
                     }
                     catch
                     {
-                        // Skip inaccessible device
+                        _ignoredPaths.Add(path);
                     }
-                }
-
-                if (_deviceFds.Count == 0)
-                {
-                    Console.WriteLine("[Macro BBQ] Warning: No readable /dev/input/event devices found. Ensure your user is in the 'input' group: sudo usermod -aG input $USER");
                 }
             }
             catch (Exception ex)
@@ -138,13 +169,16 @@ public class LinuxInputMonitor : IGlobalInputHook
 
     private void CloseAllDevices()
     {
-        foreach (int fd in _deviceFds)
+        lock (_lock)
         {
-            try { LinuxNative.Close(fd); } catch { }
+            foreach (var kvp in _deviceMap)
+            {
+                try { LinuxNative.Close(kvp.Value); } catch { }
+            }
+            _deviceMap.Clear();
+            _ignoredPaths.Clear();
+            _downKeys.Clear();
         }
-        _deviceFds.Clear();
-        _knownDevicePaths.Clear();
-        _downKeys.Clear();
     }
 
     private void MonitorLoop()
@@ -152,37 +186,47 @@ public class LinuxInputMonitor : IGlobalInputHook
         ScanInputDevices();
         int eventSize = Marshal.SizeOf<LinuxNative.input_event>();
         IntPtr buffer = Marshal.AllocHGlobal(eventSize * 16);
-        DateTime lastScanTime = DateTime.UtcNow;
+        DateTime lastDeviceScanTime = DateTime.UtcNow;
+        DateTime lastPhysicalCheckTime = DateTime.UtcNow;
 
         try
         {
             while (_isRunning)
             {
-                // Re-scan devices only when devices were plugged in or removed
-                if ((DateTime.UtcNow - lastScanTime).TotalSeconds > 2)
+                DateTime now = DateTime.UtcNow;
+
+                // Re-check for newly plugged-in devices every 3 seconds (healthy open devices remain open!)
+                if ((now - lastDeviceScanTime).TotalSeconds > 3)
                 {
-                    lastScanTime = DateTime.UtcNow;
-                    var currentFiles = Directory.Exists("/dev/input") ? Directory.GetFiles("/dev/input", "event*") : Array.Empty<string>();
-                    bool changed;
-                    lock (_lock)
+                    lastDeviceScanTime = now;
+                    ScanInputDevices();
+                }
+
+                // Active Hold Watchdog:
+                // If hotkey is currently DOWN, verify physical state every 60ms to guarantee zero stuck holds
+                if (_isHotkeyDown && (now - lastPhysicalCheckTime).TotalMilliseconds > 60)
+                {
+                    lastPhysicalCheckTime = now;
+                    if (!IsKeyPhysicallyDown(HotkeyVkCode))
                     {
-                        changed = currentFiles.Length != _knownDevicePaths.Count || System.Linq.Enumerable.Any(currentFiles, f => !_knownDevicePaths.Contains(f));
-                    }
-                    if (changed)
-                    {
-                        ScanInputDevices();
+                        lock (_lock)
+                        {
+                            _downKeys.Clear();
+                            _isHotkeyDown = false;
+                        }
+                        HotkeyUp?.Invoke();
                     }
                 }
 
                 int[] fds;
                 lock (_lock)
                 {
-                    fds = _deviceFds.ToArray();
+                    fds = _deviceMap.Values.ToArray();
                 }
 
                 if (fds.Length == 0)
                 {
-                    Thread.Sleep(500);
+                    Thread.Sleep(200);
                     continue;
                 }
 
@@ -197,7 +241,7 @@ public class LinuxInputMonitor : IGlobalInputHook
                     };
                 }
 
-                int pollRes = LinuxNative.Poll(pollFds, (uint)pollFds.Length, 100);
+                int pollRes = LinuxNative.Poll(pollFds, (uint)pollFds.Length, 50);
                 if (pollRes <= 0 || !_isRunning)
                 {
                     continue;
@@ -228,10 +272,7 @@ public class LinuxInputMonitor : IGlobalInputHook
         finally
         {
             Marshal.FreeHGlobal(buffer);
-            lock (_lock)
-            {
-                CloseAllDevices();
-            }
+            CloseAllDevices();
         }
     }
 
@@ -254,6 +295,13 @@ public class LinuxInputMonitor : IGlobalInputHook
         // Recording active
         if (IsRecording && isDown)
         {
+            // Ignore any key/click during the first 120ms of entering recording mode
+            // (e.g. the initial mouse down that clicked the UI button)
+            if (Stopwatch.GetElapsedTime(_recordingStartedTimestamp).TotalMilliseconds < 120)
+            {
+                return;
+            }
+
             var slot = _currentRecordingSlot;
             _currentRecordingSlot = RecordingSlot.None;
 
@@ -316,6 +364,78 @@ public class LinuxInputMonitor : IGlobalInputHook
                 }
             }
         }
+    }
+
+    public bool IsKeyPhysicallyDown(int vkCode)
+    {
+        var codes = GetPossibleEvdevCodes(vkCode);
+        if (codes.Count == 0) return false;
+
+        int[] fds;
+        lock (_lock)
+        {
+            fds = _deviceMap.Values.ToArray();
+        }
+
+        byte[] keyBits = new byte[64];
+        GCHandle handle = GCHandle.Alloc(keyBits, GCHandleType.Pinned);
+        try
+        {
+            IntPtr ptr = handle.AddrOfPinnedObject();
+            foreach (int fd in fds)
+            {
+                Array.Clear(keyBits, 0, keyBits.Length);
+                int res = LinuxNative.Ioctl(fd, LinuxNative.EVIOCGKEY_64, ptr);
+                if (res >= 0)
+                {
+                    foreach (ushort code in codes)
+                    {
+                        int byteIdx = code / 8;
+                        int bitIdx = code % 8;
+                        if (byteIdx < keyBits.Length)
+                        {
+                            if ((keyBits[byteIdx] & (1 << bitIdx)) != 0)
+                            {
+                                return true;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        catch { }
+        finally
+        {
+            handle.Free();
+        }
+
+        return false;
+    }
+
+    private static List<ushort> GetPossibleEvdevCodes(int vkCode)
+    {
+        var list = new List<ushort>();
+        switch (vkCode)
+        {
+            case 0x01: list.Add(LinuxNative.BTN_LEFT); break;
+            case 0x02: list.Add(LinuxNative.BTN_RIGHT); break;
+            case 0x04: list.Add(LinuxNative.BTN_MIDDLE); break;
+            case 0x05: // VK_XBUTTON1 (M4)
+                list.Add(LinuxNative.BTN_SIDE);
+                list.Add(LinuxNative.BTN_BACK);
+                break;
+            case 0x06: // VK_XBUTTON2 (M5)
+                list.Add(LinuxNative.BTN_EXTRA);
+                list.Add(LinuxNative.BTN_FORWARD);
+                break;
+            default:
+                if (LinuxUinputSimulator.TryMapVkToEvdev(vkCode, out _, out ushort code))
+                {
+                    list.Add(code);
+                }
+                break;
+        }
+        return list;
     }
 
     public static int EvdevToVkCode(ushort code)

@@ -19,7 +19,10 @@ public partial class MainViewModel : ViewModelBase, IDisposable
     private RecordingSlot _activeRecordingSlot = RecordingSlot.None;
     private int _slotCountdownRemaining = 5;
     private long _lastClickCountUpdateTime = 0;
+    private long _lastSlotRecordedTimestamp = 0;
     private bool _isLoadingProfile = false;
+
+    public bool IsRecentlyRecorded => _lastSlotRecordedTimestamp != 0 && Stopwatch.GetElapsedTime(_lastSlotRecordedTimestamp).TotalMilliseconds < 450;
 
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(EstimatedCpsText))]
@@ -605,6 +608,8 @@ public partial class MainViewModel : ViewModelBase, IDisposable
 
     private void StartRecordingSlot(RecordingSlot slot)
     {
+        if (IsRecentlyRecorded) return;
+
         if (IsRunning)
         {
             _engine.Stop();
@@ -714,8 +719,10 @@ public partial class MainViewModel : ViewModelBase, IDisposable
 
     private void OnSlotRecorded(RecordingSlot slot, int vkCode)
     {
+        _lastSlotRecordedTimestamp = Stopwatch.GetTimestamp();
         Dispatcher.UIThread.Post(() =>
         {
+            _lastSlotRecordedTimestamp = Stopwatch.GetTimestamp();
             StopCountdownTimer();
             _activeRecordingSlot = RecordingSlot.None;
 
@@ -835,6 +842,8 @@ public partial class MainViewModel : ViewModelBase, IDisposable
     [RelayCommand]
     public void ToggleRecordingHotkey()
     {
+        if (IsRecentlyRecorded) return;
+
         if (IsRecordingHotkey)
         {
             CancelRecording();
@@ -892,6 +901,8 @@ public partial class MainViewModel : ViewModelBase, IDisposable
     [RelayCommand]
     public void ToggleRecordingPrimary()
     {
+        if (IsRecentlyRecorded) return;
+
         if (IsRecordingPrimary)
         {
             CancelRecording();
@@ -952,6 +963,8 @@ public partial class MainViewModel : ViewModelBase, IDisposable
     [RelayCommand]
     public void ToggleRecordingModifier()
     {
+        if (IsRecentlyRecorded) return;
+
         if (IsRecordingModifier)
         {
             CancelRecording();

@@ -169,6 +169,7 @@ public static class LinuxNative
     public const ulong UI_DEV_DESTROY = 0x5502;
     public const ulong UI_DEV_SETUP   = 0x405c5503;
     public const ulong EVIOCGNAME_256 = 0x81004506;
+    public const ulong EVIOCGKEY_64   = 0x80404518;
 
     // Bus types
     public const ushort BUS_USB = 0x03;

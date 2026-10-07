@@ -82,4 +82,26 @@ public partial class MainWindow : Window
             e.Handled = true;
         }
     }
+
+    protected override void OnKeyDown(KeyEventArgs e)
+    {
+        if (DataContext is MainViewModel vm && vm.IsRecordingAny)
+        {
+            // Swallow keyboard keys (such as Spacebar, Enter, etc.) while recording
+            // so Avalonia UI controls do not interpret them as button triggers
+            e.Handled = true;
+            return;
+        }
+        base.OnKeyDown(e);
+    }
+
+    protected override void OnKeyUp(KeyEventArgs e)
+    {
+        if (DataContext is MainViewModel vm && (vm.IsRecordingAny || vm.IsRecentlyRecorded))
+        {
+            e.Handled = true;
+            return;
+        }
+        base.OnKeyUp(e);
+    }
 }
