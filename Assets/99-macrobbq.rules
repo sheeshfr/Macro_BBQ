@@ -1,0 +1,13 @@
+# ==============================================================================
+# Macro BBQ - Linux Permissions for Virtual Clicks & Hotkey Monitoring
+# ==============================================================================
+# Grants non-root users in the 'input' group and active desktop sessions access
+# to /dev/uinput (to synthesize high-speed mouse clicks and keystrokes) and
+# /dev/input/event* (to monitor global hotkey triggers without Wayland limits).
+# ==============================================================================
+
+# /dev/uinput permissions
+KERNEL=="uinput", SUBSYSTEM=="misc", MODE="0660", GROUP="input", TAG+="uaccess", OPTIONS+="static_node=uinput"
+
+# /dev/input/event* monitoring
+SUBSYSTEM=="input", MODE="0660", GROUP="input", TAG+="uaccess"

@@ -110,6 +110,8 @@ public class AutoClickerEngine : IDisposable
         ClickCountUpdated?.Invoke(0);
     }
 
+    private readonly IInputSimulator _simulator = InputSimulatorFactory.Create();
+
     public static readonly UIntPtr INJECTED_SIGNATURE = (UIntPtr)0xC11C801;
 
     public static bool IsMouseButton(int vkCode)
@@ -117,124 +119,22 @@ public class AutoClickerEngine : IDisposable
         return vkCode is Win32Api.VK_LBUTTON or Win32Api.VK_RBUTTON or Win32Api.VK_MBUTTON or Win32Api.VK_XBUTTON1 or Win32Api.VK_XBUTTON2;
     }
 
-    public static void SendButtonUp(int vkCode)
+    private void SendButtonUp(int vkCode)
     {
-        if (IsMouseButton(vkCode))
-        {
-            uint flag = vkCode switch
-            {
-                Win32Api.VK_RBUTTON => Win32Api.MOUSEEVENTF_RIGHTUP,
-                Win32Api.VK_MBUTTON => Win32Api.MOUSEEVENTF_MIDDLEUP,
-                Win32Api.VK_XBUTTON1 or Win32Api.VK_XBUTTON2 => Win32Api.MOUSEEVENTF_XUP,
-                _ => Win32Api.MOUSEEVENTF_LEFTUP
-            };
-            uint mouseData = vkCode == Win32Api.VK_XBUTTON2 ? 2u : (vkCode == Win32Api.VK_XBUTTON1 ? 1u : 0u);
-
-            var input = new Win32Api.INPUT
-            {
-                type = Win32Api.INPUT_MOUSE,
-                mi = new Win32Api.MOUSEINPUT
-                {
-                    mouseData = mouseData,
-                    dwFlags = flag,
-                    dwExtraInfo = INJECTED_SIGNATURE
-                }
-            };
-
-            uint sent = Win32Api.SendInput(1, new[] { input }, Marshal.SizeOf<Win32Api.INPUT>());
-            if (sent == 0)
-            {
-                Win32Api.mouse_event(flag, 0, 0, mouseData, INJECTED_SIGNATURE);
-            }
-        }
-        else
-        {
-            var input = new Win32Api.INPUT
-            {
-                type = Win32Api.INPUT_KEYBOARD,
-                ki = new Win32Api.KEYBDINPUT
-                {
-                    wVk = (ushort)vkCode,
-                    wScan = 0,
-                    dwFlags = Win32Api.KEYEVENTF_KEYUP,
-                    dwExtraInfo = INJECTED_SIGNATURE
-                }
-            };
-
-            uint sent = Win32Api.SendInput(1, new[] { input }, Marshal.SizeOf<Win32Api.INPUT>());
-            if (sent == 0)
-            {
-                Win32Api.keybd_event((byte)vkCode, 0, Win32Api.KEYEVENTF_KEYUP, INJECTED_SIGNATURE);
-            }
-        }
+        _simulator.SendButtonUp(vkCode);
     }
 
     private void SendButtonDown(int vkCode)
     {
         if (!IsRunning || _cts?.IsCancellationRequested == true) return;
-
-        if (IsMouseButton(vkCode))
-        {
-            uint flag = vkCode switch
-            {
-                Win32Api.VK_RBUTTON => Win32Api.MOUSEEVENTF_RIGHTDOWN,
-                Win32Api.VK_MBUTTON => Win32Api.MOUSEEVENTF_MIDDLEDOWN,
-                Win32Api.VK_XBUTTON1 or Win32Api.VK_XBUTTON2 => Win32Api.MOUSEEVENTF_XDOWN,
-                _ => Win32Api.MOUSEEVENTF_LEFTDOWN
-            };
-            uint mouseData = vkCode == Win32Api.VK_XBUTTON2 ? 2u : (vkCode == Win32Api.VK_XBUTTON1 ? 1u : 0u);
-
-            var input = new Win32Api.INPUT
-            {
-                type = Win32Api.INPUT_MOUSE,
-                mi = new Win32Api.MOUSEINPUT
-                {
-                    mouseData = mouseData,
-                    dwFlags = flag,
-                    dwExtraInfo = INJECTED_SIGNATURE
-                }
-            };
-
-            uint sent = Win32Api.SendInput(1, new[] { input }, Marshal.SizeOf<Win32Api.INPUT>());
-            if (sent == 0)
-            {
-                Win32Api.mouse_event(flag, 0, 0, mouseData, INJECTED_SIGNATURE);
-            }
-        }
-        else
-        {
-            var input = new Win32Api.INPUT
-            {
-                type = Win32Api.INPUT_KEYBOARD,
-                ki = new Win32Api.KEYBDINPUT
-                {
-                    wVk = (ushort)vkCode,
-                    wScan = 0,
-                    dwFlags = Win32Api.KEYEVENTF_KEYDOWN,
-                    dwExtraInfo = INJECTED_SIGNATURE
-                }
-            };
-
-            uint sent = Win32Api.SendInput(1, new[] { input }, Marshal.SizeOf<Win32Api.INPUT>());
-            if (sent == 0)
-            {
-                Win32Api.keybd_event((byte)vkCode, 0, Win32Api.KEYEVENTF_KEYDOWN, INJECTED_SIGNATURE);
-            }
-        }
+        _simulator.SendButtonDown(vkCode);
     }
 
     public void ReleaseAllButtons()
     {
         try
         {
-            // 1. Release Primary button first (e.g. Left Click fire)
-            SendButtonUp(PrimaryVkCode);
-
-            // 2. Release Modifier button instantly (e.g. Right Click ADS)
-            if (IsModifierEnabled)
-            {
-                SendButtonUp(ModifierVkCode);
-            }
+            _simulator.ReleaseAllButtons(PrimaryVkCode, IsModifierEnabled, ModifierVkCode);
         }
         catch
         {
@@ -275,7 +175,10 @@ public class AutoClickerEngine : IDisposable
 
     private void ClickLoop(CancellationToken token)
     {
-        Win32Api.TimeBeginPeriod(1);
+        if (OperatingSystem.IsWindows())
+        {
+            Win32Api.TimeBeginPeriod(1);
+        }
         var sw = Stopwatch.StartNew();
 
         try
@@ -367,7 +270,10 @@ public class AutoClickerEngine : IDisposable
         finally
         {
             ReleaseAllButtons();
-            Win32Api.TimeEndPeriod(1);
+            if (OperatingSystem.IsWindows())
+            {
+                Win32Api.TimeEndPeriod(1);
+            }
         }
     }
 
@@ -375,6 +281,7 @@ public class AutoClickerEngine : IDisposable
     {
         Stop();
         _cts?.Dispose();
+        _simulator.Dispose();
         GC.SuppressFinalize(this);
     }
 }

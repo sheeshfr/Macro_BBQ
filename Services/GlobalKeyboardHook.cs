@@ -15,7 +15,7 @@ public enum RecordingSlot
     Modifier
 }
 
-public class GlobalKeyboardHook : IDisposable
+public class GlobalKeyboardHook : IGlobalInputHook
 {
     private IntPtr _keyboardHookId = IntPtr.Zero;
     private IntPtr _mouseHookId = IntPtr.Zero;

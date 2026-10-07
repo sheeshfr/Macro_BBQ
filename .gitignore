@@ -2,6 +2,7 @@
 [Bb]in/
 [Oo]bj/
 publish/
+publish-selfcontained/
 *.user
 *.userosscache
 *.suo

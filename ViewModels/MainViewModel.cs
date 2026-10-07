@@ -14,7 +14,7 @@ namespace AutoClicker.ViewModels;
 public partial class MainViewModel : ViewModelBase, IDisposable
 {
     private readonly AutoClickerEngine _engine;
-    private readonly GlobalKeyboardHook _hook;
+    private readonly IGlobalInputHook _hook;
     private DispatcherTimer? _countdownTimer;
     private RecordingSlot _activeRecordingSlot = RecordingSlot.None;
     private int _slotCountdownRemaining = 5;
@@ -381,7 +381,7 @@ public partial class MainViewModel : ViewModelBase, IDisposable
         UpdateProfilesUiState();
 
         _engine = new AutoClickerEngine();
-        _hook = new GlobalKeyboardHook();
+        _hook = GlobalInputHookFactory.Create();
 
         _hook.HotkeyVkCode = _hotkeyVkCode;
         _hook.BlockHotkey = _blockHotkey;

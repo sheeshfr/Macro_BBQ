@@ -1,0 +1,13 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=Macro BBQ
+GenericName=Game Macro & Auto Clicker
+Comment=Ultra-fast gaming auto-clicker and input macro utility
+Exec=bash -c 'SCRIPT_DIR="$(dirname "%k")"; if [ -f "$SCRIPT_DIR/MacroBBQ.sh" ]; then exec "$SCRIPT_DIR/MacroBBQ.sh"; elif [ -f "$SCRIPT_DIR/publish/MacroBBQ" ]; then exec "$SCRIPT_DIR/publish/MacroBBQ"; else exec "$SCRIPT_DIR/MacroBBQ"; fi'
+Icon=Assets/icon.png
+Terminal=false
+Categories=Game;Utility;
+StartupNotify=true
+StartupWMClass=MacroBBQ
+X-GNOME-UsesNotifications=true

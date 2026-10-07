@@ -510,3 +510,44 @@ public class MainViewModelTests
         Assert.Equal(0x75, vm.HotkeyVkCode);
     }
 }
+
+public class LinuxInputMappingTests
+{
+    [Theory]
+    [InlineData(LinuxNative.BTN_LEFT, 0x01)]
+    [InlineData(LinuxNative.BTN_RIGHT, 0x02)]
+    [InlineData(LinuxNative.BTN_MIDDLE, 0x04)]
+    [InlineData(LinuxNative.BTN_SIDE, 0x05)]
+    [InlineData(LinuxNative.BTN_BACK, 0x05)]
+    [InlineData(LinuxNative.BTN_EXTRA, 0x06)]
+    [InlineData(LinuxNative.BTN_FORWARD, 0x06)]
+    public void EvdevToVkCode_MapsMouseButtonsCorrectly(ushort evdevCode, int expectedVk)
+    {
+        int actualVk = LinuxInputMonitor.EvdevToVkCode(evdevCode);
+        Assert.Equal(expectedVk, actualVk);
+    }
+
+    [Fact]
+    public void Engine_ClicksContinuouslyAt50ms()
+    {
+        using var engine = new AutoClickerEngine();
+        engine.IntervalMs = 50;
+        engine.PrimaryVkCode = 1; // Left Click
+
+        int countEvents = 0;
+        engine.ClickCountUpdated += (count) => Interlocked.Increment(ref countEvents);
+
+        engine.Start();
+        Assert.True(engine.IsRunning);
+
+        // Sleep 260ms -> should produce at least 4 clicks (at 0ms, 50ms, 100ms, 150ms, 200ms, 250ms)
+        Thread.Sleep(260);
+
+        engine.Stop();
+        Assert.False(engine.IsRunning);
+
+        long clicks = engine.TotalClicks;
+        Assert.True(clicks >= 4, $"Expected at least 4 continuous clicks at 50ms, got {clicks}");
+        Assert.True(countEvents >= 4, $"Expected at least 4 click count events, got {countEvents}");
+    }
+}

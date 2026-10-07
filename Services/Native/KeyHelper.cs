@@ -104,23 +104,26 @@ public static class KeyHelper
             case 0xDE: return "'";
         }
 
-        // Fallback to Win32 GetKeyNameText
-        try
+        // Fallback to Win32 GetKeyNameText on Windows
+        if (OperatingSystem.IsWindows())
         {
-            uint scanCode = Win32Api.MapVirtualKey((uint)vkCode, 0); // MAPVK_VK_TO_VSC = 0
-            if (scanCode != 0)
+            try
             {
-                int lParam = (int)(scanCode << 16);
-                var sb = new StringBuilder(256);
-                if (Win32Api.GetKeyNameText(lParam, sb, sb.Capacity) > 0)
+                uint scanCode = Win32Api.MapVirtualKey((uint)vkCode, 0); // MAPVK_VK_TO_VSC = 0
+                if (scanCode != 0)
                 {
-                    return sb.ToString();
+                    int lParam = (int)(scanCode << 16);
+                    var sb = new StringBuilder(256);
+                    if (Win32Api.GetKeyNameText(lParam, sb, sb.Capacity) > 0)
+                    {
+                        return sb.ToString();
+                    }
                 }
             }
-        }
-        catch
-        {
-            // Ignore fallback error
+            catch
+            {
+                // Ignore fallback error
+            }
         }
 
         return $"Key 0x{vkCode:X2}";
