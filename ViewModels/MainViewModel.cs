@@ -245,6 +245,12 @@ public partial class MainViewModel : ViewModelBase, IDisposable
     private bool _closeToTray = true;
 
     [ObservableProperty]
+    private int? _windowPositionX;
+
+    [ObservableProperty]
+    private int? _windowPositionY;
+
+    [ObservableProperty]
     private bool _isSettingsOpen = false;
 
     [ObservableProperty]
@@ -380,6 +386,8 @@ public partial class MainViewModel : ViewModelBase, IDisposable
 
         _stopOnEscape = config.StopOnEscape;
         _closeToTray = config.CloseToTray;
+        _windowPositionX = config.WindowPositionX;
+        _windowPositionY = config.WindowPositionY;
 
         UpdateProfilesUiState();
 
@@ -412,9 +420,14 @@ public partial class MainViewModel : ViewModelBase, IDisposable
         }
     }
 
-    private void SaveConfig()
+    public void SaveConfig()
     {
         if (_isLoadingProfile) return;
+
+        if (ActiveProfile == null && Profiles.Count > 0)
+        {
+            ActiveProfile = Profiles.FirstOrDefault(p => string.Equals(p.Name, ActiveProfileName, StringComparison.OrdinalIgnoreCase)) ?? Profiles[0];
+        }
 
         if (ActiveProfile != null)
         {
@@ -439,6 +452,8 @@ public partial class MainViewModel : ViewModelBase, IDisposable
             BlockHotkey = BlockHotkey,
             StopOnEscape = StopOnEscape,
             CloseToTray = CloseToTray,
+            WindowPositionX = WindowPositionX,
+            WindowPositionY = WindowPositionY,
             IntervalMs = IntervalMs,
             TriggerMode = SelectedTriggerMode,
             HotkeyVkCode = HotkeyVkCode,
@@ -470,6 +485,34 @@ public partial class MainViewModel : ViewModelBase, IDisposable
         SaveConfig();
     }
 
+    partial void OnWindowPositionXChanged(int? value)
+    {
+        SaveConfig();
+    }
+
+    partial void OnWindowPositionYChanged(int? value)
+    {
+        SaveConfig();
+    }
+
+    partial void OnHotkeyVkCodeChanged(int value)
+    {
+        _hook.HotkeyVkCode = value;
+        SaveConfig();
+    }
+
+    partial void OnPrimaryVkCodeChanged(int value)
+    {
+        _engine.PrimaryVkCode = value;
+        SaveConfig();
+    }
+
+    partial void OnModifierVkCodeChanged(int value)
+    {
+        _engine.ModifierVkCode = value;
+        SaveConfig();
+    }
+
     partial void OnIsModifierEnabledChanged(bool value)
     {
         _engine.IsModifierEnabled = value;
@@ -479,15 +522,15 @@ public partial class MainViewModel : ViewModelBase, IDisposable
     partial void OnSelectedModifierButtonChanged(MouseButtonType value)
     {
         int targetVk = AutoClickerEngine.MouseButtonToVkCode(value);
-        if (ModifierVkCode != targetVk && (ModifierVkCode is 1 or 2 or 4))
+        if (ModifierVkCode != targetVk)
         {
             ModifierVkCode = targetVk;
             ModifierButtonName = KeyHelper.GetKeyName(ModifierVkCode);
             _engine.ModifierVkCode = ModifierVkCode;
             OnPropertyChanged(nameof(ModifierKeyButtonText));
             OnPropertyChanged(nameof(ModifierStatusText));
-            SaveConfig();
         }
+        SaveConfig();
     }
 
     partial void OnSelectedModifierActionChanged(ModifierAction value)
@@ -504,14 +547,22 @@ public partial class MainViewModel : ViewModelBase, IDisposable
 
     partial void OnModifierDelayMsChanged(int value)
     {
-        if (value < 1) ModifierDelayMs = 1;
+        if (value < 1)
+        {
+            ModifierDelayMs = 1;
+            return;
+        }
         _engine.ModifierDelayMs = ModifierDelayMs;
         SaveConfig();
     }
 
     partial void OnIntervalMsChanged(int value)
     {
-        if (value < 1) IntervalMs = 1;
+        if (value < 1)
+        {
+            IntervalMs = 1;
+            return;
+        }
         _engine.IntervalMs = IntervalMs;
         SaveConfig();
     }
@@ -519,14 +570,14 @@ public partial class MainViewModel : ViewModelBase, IDisposable
     partial void OnSelectedMouseButtonChanged(MouseButtonType value)
     {
         int targetVk = AutoClickerEngine.MouseButtonToVkCode(value);
-        if (PrimaryVkCode != targetVk && (PrimaryVkCode is 1 or 2 or 4))
+        if (PrimaryVkCode != targetVk)
         {
             PrimaryVkCode = targetVk;
             PrimaryButtonName = KeyHelper.GetKeyName(PrimaryVkCode);
             _engine.PrimaryVkCode = PrimaryVkCode;
             OnPropertyChanged(nameof(PrimaryKeyButtonText));
-            SaveConfig();
         }
+        SaveConfig();
     }
 
     partial void OnSelectedClickTypeChanged(ClickType value)
@@ -555,6 +606,7 @@ public partial class MainViewModel : ViewModelBase, IDisposable
         _engine.ModifierAction = SelectedModifierAction;
         _engine.ModifierOrder = SelectedModifierOrder;
         _engine.ModifierDelayMs = Math.Max(1, ModifierDelayMs);
+        SaveConfig();
     }
 
     private void OnEmergencyStopTriggered()

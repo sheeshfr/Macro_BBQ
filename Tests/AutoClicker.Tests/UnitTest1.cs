@@ -562,4 +562,76 @@ public class WindowsInputTests
 
         Assert.False(vm.IsRecentlyRecorded);
     }
+
+    [Fact]
+    public void Settings_ImmediatePropertyChanges_PersistToActiveProfile()
+    {
+        using var vm = new MainViewModel(new AppConfig());
+
+        // Change interval
+        vm.IntervalMs = 28;
+        Assert.Equal(28, vm.ActiveProfile?.IntervalMs);
+
+        // Change trigger mode
+        vm.SelectedTriggerMode = TriggerMode.Toggle;
+        Assert.Equal(TriggerMode.Toggle, vm.ActiveProfile?.TriggerMode);
+
+        // Change hotkey
+        vm.HotkeyVkCode = 0x76; // F7
+        Assert.Equal(0x76, vm.ActiveProfile?.HotkeyVkCode);
+
+        // Change primary
+        vm.PrimaryVkCode = 0x45; // 'E'
+        Assert.Equal(0x45, vm.ActiveProfile?.PrimaryVkCode);
+
+        // Change modifier
+        vm.IsModifierEnabled = true;
+        vm.ModifierVkCode = 0x51; // 'Q'
+        vm.SelectedModifierAction = ModifierAction.Spam;
+        vm.SelectedModifierOrder = ModifierOrder.PrimaryFirst;
+        vm.ModifierDelayMs = 45;
+        Assert.True(vm.ActiveProfile?.IsModifierEnabled);
+        Assert.Equal(0x51, vm.ActiveProfile?.ModifierVkCode);
+        Assert.Equal(ModifierAction.Spam, vm.ActiveProfile?.ModifierAction);
+        Assert.Equal(ModifierOrder.PrimaryFirst, vm.ActiveProfile?.ModifierOrder);
+        Assert.Equal(45, vm.ActiveProfile?.ModifierDelayMs);
+
+        // General settings
+        vm.BlockHotkey = true;
+        vm.StopOnEscape = false;
+        vm.CloseToTray = false;
+        Assert.True(vm.ActiveProfile?.BlockHotkey);
+        Assert.False(vm.StopOnEscape);
+        Assert.False(vm.CloseToTray);
+    }
+
+    [Fact]
+    public void SettingsService_ThreadSafeConcurrentSaves_NoExceptions()
+    {
+        var config = new AppConfig
+        {
+            IntervalMs = 33,
+            ActiveProfileName = "Default"
+        };
+
+        // Fire 10 parallel saves to test file lock & atomic replace safety
+        var exceptions = new System.Collections.Concurrent.ConcurrentBag<Exception>();
+        System.Threading.Tasks.Parallel.For(0, 10, i =>
+        {
+            try
+            {
+                SettingsService.Save(config);
+            }
+            catch (Exception ex)
+            {
+                exceptions.Add(ex);
+            }
+        });
+
+        Assert.Empty(exceptions);
+
+        var loaded = SettingsService.Load();
+        Assert.NotNull(loaded);
+        Assert.NotEmpty(loaded.Profiles);
+    }
 }

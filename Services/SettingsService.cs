@@ -18,6 +18,10 @@ public class AppConfig
     public bool StopOnEscape { get; set; } = true;
     public bool CloseToTray { get; set; } = true;
 
+    // Window position
+    public int? WindowPositionX { get; set; }
+    public int? WindowPositionY { get; set; }
+
     // Legacy fields for backward compatibility with previous versions
     public int IntervalMs { get; set; } = 50;
     public TriggerMode TriggerMode { get; set; } = TriggerMode.Hold;
@@ -42,6 +46,7 @@ internal partial class AppConfigJsonContext : JsonSerializerContext
 
 public static class SettingsService
 {
+    private static readonly object FileLock = new();
     private static readonly string SettingsDirectory = Path.Combine(
         Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
         "MacroBBQ");
@@ -53,54 +58,96 @@ public static class SettingsService
 
     public static AppConfig Load()
     {
-        try
+        lock (FileLock)
         {
-            if (!File.Exists(SettingsPath) && File.Exists(OldSettingsPath))
+            try
             {
-                try
+                if (!File.Exists(SettingsPath) && File.Exists(OldSettingsPath))
                 {
-                    Directory.CreateDirectory(SettingsDirectory);
-                    File.Copy(OldSettingsPath, SettingsPath, true);
+                    try
+                    {
+                        Directory.CreateDirectory(SettingsDirectory);
+                        File.Copy(OldSettingsPath, SettingsPath, true);
+                    }
+                    catch
+                    {
+                        // Fall through to try loading old path directly if copy failed
+                    }
                 }
-                catch
+
+                if (File.Exists(SettingsPath))
                 {
-                    // Fall through to try loading old path directly if copy failed
+                    for (int attempt = 0; attempt < 3; attempt++)
+                    {
+                        try
+                        {
+                            string json = File.ReadAllText(SettingsPath);
+                            var config = (AppConfig?)JsonSerializer.Deserialize(json, typeof(AppConfig), AppConfigJsonContext.Default);
+                            if (config != null)
+                            {
+                                EnsureValidProfiles(config);
+                                return config;
+                            }
+                            break;
+                        }
+                        catch (IOException) when (attempt < 2)
+                        {
+                            System.Threading.Thread.Sleep(20);
+                        }
+                    }
                 }
             }
-
-            if (File.Exists(SettingsPath))
+            catch
             {
-                string json = File.ReadAllText(SettingsPath);
-                var config = (AppConfig?)JsonSerializer.Deserialize(json, typeof(AppConfig), AppConfigJsonContext.Default);
-                if (config != null)
-                {
-                    EnsureValidProfiles(config);
-                    return config;
-                }
+                // Fallback to defaults
             }
-        }
-        catch
-        {
-            // Fallback to defaults
-        }
 
-        var defaultConfig = new AppConfig();
-        EnsureValidProfiles(defaultConfig);
-        return defaultConfig;
+            var defaultConfig = new AppConfig();
+            EnsureValidProfiles(defaultConfig);
+            return defaultConfig;
+        }
     }
 
     public static void Save(AppConfig config)
     {
-        try
+        lock (FileLock)
         {
-            EnsureValidProfiles(config);
-            Directory.CreateDirectory(SettingsDirectory);
-            string json = JsonSerializer.Serialize(config, typeof(AppConfig), AppConfigJsonContext.Default);
-            File.WriteAllText(SettingsPath, json);
-        }
-        catch
-        {
-            // Silently ignore if disk/permission restricted
+            try
+            {
+                EnsureValidProfiles(config);
+                Directory.CreateDirectory(SettingsDirectory);
+                string json = JsonSerializer.Serialize(config, typeof(AppConfig), AppConfigJsonContext.Default);
+
+                string tempPath = Path.Combine(SettingsDirectory, $"settings.{Guid.NewGuid():N}.tmp");
+
+                for (int attempt = 0; attempt < 5; attempt++)
+                {
+                    try
+                    {
+                        File.WriteAllText(tempPath, json);
+                        File.Move(tempPath, SettingsPath, overwrite: true);
+                        return;
+                    }
+                    catch (IOException) when (attempt < 4)
+                    {
+                        System.Threading.Thread.Sleep(25);
+                    }
+                    finally
+                    {
+                        if (File.Exists(tempPath))
+                        {
+                            try { File.Delete(tempPath); } catch { }
+                        }
+                    }
+                }
+
+                // Fallback direct write
+                File.WriteAllText(SettingsPath, json);
+            }
+            catch
+            {
+                // Silently ignore if disk/permission restricted
+            }
         }
     }
 

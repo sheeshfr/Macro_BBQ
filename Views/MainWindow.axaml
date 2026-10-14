@@ -361,7 +361,8 @@
                 <!-- Right Column: INTERVAL (ms) -->
                 <StackPanel Grid.Column="1" Orientation="Vertical" Spacing="4" HorizontalAlignment="Center">
                     <TextBlock Text="INTERVAL (ms)" FontSize="10" FontWeight="Bold" Foreground="#9CA3AF" HorizontalAlignment="Center"/>
-                    <NumericUpDown Classes="main-interval"
+                    <NumericUpDown x:Name="IntervalNumericUpDown"
+                                   Classes="main-interval"
                                    Value="{Binding IntervalMs}"
                                    Minimum="1" Maximum="3600000"
                                    Increment="10"
@@ -483,7 +484,8 @@
                             <TextBlock Text="Hold time before spam begins" FontSize="9" Foreground="#6B7280"/>
                         </StackPanel>
                         <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="5" VerticalAlignment="Center">
-                            <NumericUpDown Value="{Binding ModifierDelayMs}"
+                            <NumericUpDown x:Name="ModifierDelayNumericUpDown"
+                                           Value="{Binding ModifierDelayMs}"
                                            Minimum="1" Maximum="1000"
                                            Increment="1"
                                            FormatString="0"
