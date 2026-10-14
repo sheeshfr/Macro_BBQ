@@ -57,6 +57,15 @@ public partial class App : Application
                 window.WindowState = Avalonia.Controls.WindowState.Normal;
             }
             window.Activate();
+            window.Topmost = true;
+
+            var handle = window.TryGetPlatformHandle()?.Handle ?? IntPtr.Zero;
+            if (handle != IntPtr.Zero)
+            {
+                AutoClicker.Services.Native.Win32Api.ShowWindow(handle, 9 /* SW_RESTORE */);
+                AutoClicker.Services.Native.Win32Api.BringWindowToTop(handle);
+                AutoClicker.Services.Native.Win32Api.SetForegroundWindow(handle);
+            }
         }
     }
 

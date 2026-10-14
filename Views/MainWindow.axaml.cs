@@ -60,6 +60,7 @@ public partial class MainWindow : Window
 
     private void OnOpened(object? sender, EventArgs e)
     {
+        bool placed = false;
         if (DataContext is MainViewModel vm && vm.WindowPositionX.HasValue && vm.WindowPositionY.HasValue)
         {
             var savedPoint = new Avalonia.PixelPoint(vm.WindowPositionX.Value, vm.WindowPositionY.Value);
@@ -67,6 +68,21 @@ public partial class MainWindow : Window
             if (isOnScreen)
             {
                 Position = savedPoint;
+                placed = true;
+            }
+        }
+
+        if (!placed)
+        {
+            var primaryScreen = Screens.Primary ?? Screens.All.FirstOrDefault();
+            if (primaryScreen != null)
+            {
+                var workArea = primaryScreen.WorkingArea;
+                int w = (int)(Bounds.Width > 0 ? Bounds.Width : 330);
+                int h = (int)(Bounds.Height > 0 ? Bounds.Height : 320);
+                int x = workArea.X + (workArea.Width - w) / 2;
+                int y = workArea.Y + (workArea.Height - h) / 2;
+                Position = new Avalonia.PixelPoint(x, y);
             }
         }
     }

@@ -8,7 +8,7 @@
         Width="330"
         SizeToContent="Height"
         CanResize="False"
-        WindowStartupLocation="CenterScreen"
+        WindowStartupLocation="Manual"
         Topmost="True"
         x:Class="AutoClicker.Views.MainWindow"
         x:DataType="vm:MainViewModel"
