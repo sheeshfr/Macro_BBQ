@@ -511,20 +511,20 @@ public class MainViewModelTests
     }
 }
 
-public class LinuxInputMappingTests
+public class WindowsInputTests
 {
     [Theory]
-    [InlineData(LinuxNative.BTN_LEFT, 0x01)]
-    [InlineData(LinuxNative.BTN_RIGHT, 0x02)]
-    [InlineData(LinuxNative.BTN_MIDDLE, 0x04)]
-    [InlineData(LinuxNative.BTN_SIDE, 0x05)]
-    [InlineData(LinuxNative.BTN_BACK, 0x05)]
-    [InlineData(LinuxNative.BTN_EXTRA, 0x06)]
-    [InlineData(LinuxNative.BTN_FORWARD, 0x06)]
-    public void EvdevToVkCode_MapsMouseButtonsCorrectly(ushort evdevCode, int expectedVk)
+    [InlineData(Win32Api.VK_LBUTTON, true)]
+    [InlineData(Win32Api.VK_RBUTTON, true)]
+    [InlineData(Win32Api.VK_MBUTTON, true)]
+    [InlineData(Win32Api.VK_XBUTTON1, true)]
+    [InlineData(Win32Api.VK_XBUTTON2, true)]
+    [InlineData(0x20 /* Space */, false)]
+    [InlineData(0x75 /* F6 */, false)]
+    public void IsMouseButton_IdentifiesMouseButtonsCorrectly(int vkCode, bool expectedResult)
     {
-        int actualVk = LinuxInputMonitor.EvdevToVkCode(evdevCode);
-        Assert.Equal(expectedVk, actualVk);
+        bool actual = Win32InputSimulator.IsMouseButton(vkCode);
+        Assert.Equal(expectedResult, actual);
     }
 
     [Fact]
@@ -560,19 +560,6 @@ public class LinuxInputMappingTests
         vm.ToggleRecordingPrimaryCommand.Execute(null);
         Assert.True(vm.IsRecordingPrimary);
 
-        // Simulate slot recorded (e.g. Left click assigned)
-        // Access protected/internal event simulation via mock or direct invoke
-        // Since slot recording updates _lastSlotRecordedTimestamp, let's verify via ViewModel commands
-        // If IsRecentlyRecorded is active, ToggleRecordingPrimary should be blocked
         Assert.False(vm.IsRecentlyRecorded);
-    }
-
-    [Fact]
-    public void LinuxInputMonitor_IsKeyPhysicallyDown_ReturnsFalseWhenNotHeld()
-    {
-        using var monitor = new LinuxInputMonitor();
-        // Mouse 4 (vkCode = 5) is not held down right now during automated testing
-        bool isDown = monitor.IsKeyPhysicallyDown(5);
-        Assert.False(isDown);
     }
 }

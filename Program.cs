@@ -1,5 +1,6 @@
 using Avalonia;
 using System;
+using System.IO;
 using System.Threading;
 
 namespace AutoClicker;
@@ -15,41 +16,6 @@ sealed class Program
     [STAThread]
     public static void Main(string[] args)
     {
-        if (OperatingSystem.IsLinux())
-        {
-            bool acquired = AutoClicker.Services.Native.LinuxSingleInstance.TryAcquire(() =>
-            {
-                Avalonia.Threading.Dispatcher.UIThread.Post(() =>
-                {
-                    if (Application.Current is App app)
-                    {
-                        app.ShowMainWindow();
-                    }
-                });
-            });
-
-            if (!acquired)
-            {
-                // Another instance is already running and has been notified to raise its window
-                return;
-            }
-
-            try
-            {
-                BuildAvaloniaApp().StartWithClassicDesktopLifetime(args);
-            }
-            finally
-            {
-                AutoClicker.Services.Native.LinuxSingleInstance.Release();
-            }
-            return;
-        }
-        else if (!OperatingSystem.IsWindows())
-        {
-            BuildAvaloniaApp().StartWithClassicDesktopLifetime(args);
-            return;
-        }
-
         Mutex? mutex = null;
         bool hasHandle = false;
 

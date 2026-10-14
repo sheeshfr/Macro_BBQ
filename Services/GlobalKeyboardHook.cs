@@ -158,10 +158,7 @@ public class GlobalKeyboardHook : IGlobalInputHook
             Priority = ThreadPriority.Highest,
             Name = "RecordingHookPump"
         };
-        if (OperatingSystem.IsWindows())
-        {
-            _hookThread.SetApartmentState(ApartmentState.STA);
-        }
+        _hookThread.SetApartmentState(ApartmentState.STA);
         _hookThread.Start();
         _hookStartedEvent.Wait(2000);
     }

@@ -175,10 +175,7 @@ public class AutoClickerEngine : IDisposable
 
     private void ClickLoop(CancellationToken token)
     {
-        if (OperatingSystem.IsWindows())
-        {
-            Win32Api.TimeBeginPeriod(1);
-        }
+        Win32Api.TimeBeginPeriod(1);
         var sw = Stopwatch.StartNew();
 
         try
@@ -270,10 +267,7 @@ public class AutoClickerEngine : IDisposable
         finally
         {
             ReleaseAllButtons();
-            if (OperatingSystem.IsWindows())
-            {
-                Win32Api.TimeEndPeriod(1);
-            }
+            Win32Api.TimeEndPeriod(1);
         }
     }
 
