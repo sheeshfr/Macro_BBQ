@@ -56,15 +56,26 @@ public partial class App : Application
             {
                 window.WindowState = Avalonia.Controls.WindowState.Normal;
             }
+
+            var primaryScreen = window.Screens.Primary ?? System.Linq.Enumerable.FirstOrDefault(window.Screens.All);
+            if (primaryScreen != null)
+            {
+                var workArea = primaryScreen.WorkingArea;
+                if (!workArea.Contains(window.Position))
+                {
+                    int w = (int)(window.Bounds.Width > 0 ? window.Bounds.Width : 330);
+                    int h = (int)(window.Bounds.Height > 0 ? window.Bounds.Height : 320);
+                    window.Position = new Avalonia.PixelPoint(workArea.X + (workArea.Width - w) / 2, workArea.Y + (workArea.Height - h) / 2);
+                }
+            }
+
             window.Activate();
             window.Topmost = true;
 
             var handle = window.TryGetPlatformHandle()?.Handle ?? IntPtr.Zero;
             if (handle != IntPtr.Zero)
             {
-                AutoClicker.Services.Native.Win32Api.ShowWindow(handle, 9 /* SW_RESTORE */);
-                AutoClicker.Services.Native.Win32Api.BringWindowToTop(handle);
-                AutoClicker.Services.Native.Win32Api.SetForegroundWindow(handle);
+                AutoClicker.Services.Native.Win32Api.ForceForegroundWindow(handle);
             }
         }
     }

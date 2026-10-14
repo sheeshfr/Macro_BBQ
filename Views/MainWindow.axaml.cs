@@ -11,7 +11,6 @@ namespace AutoClicker.Views;
 public partial class MainWindow : Window
 {
     private bool _isForceClose = false;
-    private DispatcherTimer? _positionSaveTimer;
 
     public MainWindow()
     {
@@ -20,7 +19,6 @@ public partial class MainWindow : Window
         Closed += OnClosed;
         Deactivated += OnDeactivated;
         Opened += OnOpened;
-        PositionChanged += OnPositionChanged;
 
         TriggerKeyButton.AddHandler(InputElement.PointerPressedEvent, OnTriggerButtonPointerPressed, RoutingStrategies.Tunnel | RoutingStrategies.Bubble, true);
         PrimaryKeyButton.AddHandler(InputElement.PointerPressedEvent, OnPrimaryButtonPointerPressed, RoutingStrategies.Tunnel | RoutingStrategies.Bubble, true);
@@ -60,50 +58,16 @@ public partial class MainWindow : Window
 
     private void OnOpened(object? sender, EventArgs e)
     {
-        bool placed = false;
-        if (DataContext is MainViewModel vm && vm.WindowPositionX.HasValue && vm.WindowPositionY.HasValue)
+        var primaryScreen = Screens.Primary ?? Screens.All.FirstOrDefault();
+        if (primaryScreen != null)
         {
-            var savedPoint = new Avalonia.PixelPoint(vm.WindowPositionX.Value, vm.WindowPositionY.Value);
-            bool isOnScreen = Screens.All.Any(s => s.WorkingArea.Contains(savedPoint));
-            if (isOnScreen)
-            {
-                Position = savedPoint;
-                placed = true;
-            }
+            var workArea = primaryScreen.WorkingArea;
+            int w = (int)(Bounds.Width > 0 ? Bounds.Width : 330);
+            int h = (int)(Bounds.Height > 0 ? Bounds.Height : 320);
+            int x = workArea.X + (workArea.Width - w) / 2;
+            int y = workArea.Y + (workArea.Height - h) / 2;
+            Position = new Avalonia.PixelPoint(x, y);
         }
-
-        if (!placed)
-        {
-            var primaryScreen = Screens.Primary ?? Screens.All.FirstOrDefault();
-            if (primaryScreen != null)
-            {
-                var workArea = primaryScreen.WorkingArea;
-                int w = (int)(Bounds.Width > 0 ? Bounds.Width : 330);
-                int h = (int)(Bounds.Height > 0 ? Bounds.Height : 320);
-                int x = workArea.X + (workArea.Width - w) / 2;
-                int y = workArea.Y + (workArea.Height - h) / 2;
-                Position = new Avalonia.PixelPoint(x, y);
-            }
-        }
-    }
-
-    private void OnPositionChanged(object? sender, PixelPointEventArgs e)
-    {
-        if (_positionSaveTimer == null)
-        {
-            _positionSaveTimer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(300) };
-            _positionSaveTimer.Tick += (s, ev) =>
-            {
-                _positionSaveTimer.Stop();
-                if (DataContext is MainViewModel vm)
-                {
-                    vm.WindowPositionX = Position.X;
-                    vm.WindowPositionY = Position.Y;
-                }
-            };
-        }
-        _positionSaveTimer.Stop();
-        _positionSaveTimer.Start();
     }
 
     private void OnDeactivated(object? sender, EventArgs e)
@@ -147,8 +111,6 @@ public partial class MainWindow : Window
         FlushNumericInputs();
         if (DataContext is MainViewModel vm)
         {
-            vm.WindowPositionX = Position.X;
-            vm.WindowPositionY = Position.Y;
             vm.SaveConfig();
         }
 
@@ -169,8 +131,6 @@ public partial class MainWindow : Window
         FlushNumericInputs();
         if (DataContext is MainViewModel vm)
         {
-            vm.WindowPositionX = Position.X;
-            vm.WindowPositionY = Position.Y;
             vm.SaveConfig();
         }
 

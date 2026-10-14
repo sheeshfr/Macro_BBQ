@@ -184,6 +184,13 @@ public static class Win32Api
     public static extern short GetAsyncKeyState(int vKey);
 
     [DllImport("user32.dll")]
+    public static extern IntPtr GetForegroundWindow();
+
+    [DllImport("user32.dll", SetLastError = true)]
+    [return: MarshalAs(UnmanagedType.Bool)]
+    public static extern bool AttachThreadInput(uint idAttach, uint idAttachTo, [MarshalAs(UnmanagedType.Bool)] bool fAttach);
+
+    [DllImport("user32.dll")]
     [return: MarshalAs(UnmanagedType.Bool)]
     public static extern bool SetForegroundWindow(IntPtr hWnd);
 
@@ -194,4 +201,33 @@ public static class Win32Api
     [DllImport("user32.dll")]
     [return: MarshalAs(UnmanagedType.Bool)]
     public static extern bool ShowWindow(IntPtr hWnd, int nCmdShow);
+
+    public static void ForceForegroundWindow(IntPtr hWnd)
+    {
+        if (hWnd == IntPtr.Zero) return;
+
+        IntPtr foregroundHwnd = GetForegroundWindow();
+        uint foregroundThreadId = GetWindowThreadProcessId(foregroundHwnd, out _);
+        uint currentThreadId = GetCurrentThreadId();
+
+        bool attached = false;
+        if (foregroundThreadId != 0 && foregroundThreadId != currentThreadId)
+        {
+            attached = AttachThreadInput(currentThreadId, foregroundThreadId, true);
+        }
+
+        try
+        {
+            ShowWindow(hWnd, 9 /* SW_RESTORE */);
+            BringWindowToTop(hWnd);
+            SetForegroundWindow(hWnd);
+        }
+        finally
+        {
+            if (attached)
+            {
+                AttachThreadInput(currentThreadId, foregroundThreadId, false);
+            }
+        }
+    }
 }

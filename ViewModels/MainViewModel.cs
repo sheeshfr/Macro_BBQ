@@ -1145,6 +1145,7 @@ public partial class MainViewModel : ViewModelBase, IDisposable
             _isLoadingProfile = false;
         }
 
+        IsProfilesPopupOpen = false;
         SaveConfig();
     }
 

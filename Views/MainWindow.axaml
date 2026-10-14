@@ -8,7 +8,7 @@
         Width="330"
         SizeToContent="Height"
         CanResize="False"
-        WindowStartupLocation="Manual"
+        WindowStartupLocation="CenterScreen"
         Topmost="True"
         x:Class="AutoClicker.Views.MainWindow"
         x:DataType="vm:MainViewModel"
@@ -500,24 +500,17 @@
                     </Grid>
                 </StackPanel>
             </Border>
-        </StackPanel>
 
-        <!-- Settings Popup: Appears perfectly in line, underneath the main window width -->
-        <Popup x:Name="SettingsPopup"
-               IsOpen="{Binding IsSettingsOpen, Mode=TwoWay}"
-               PlacementTarget="{Binding #RootPanel}"
-               Placement="BottomEdgeAlignedLeft"
-               HorizontalOffset="0"
-               VerticalOffset="4"
-               IsLightDismissEnabled="True">
-            <Border Background="#1C1E24"
+            <!-- Inline Settings Drawer -->
+            <Border IsVisible="{Binding IsSettingsOpen}"
+                    Background="#181A20"
                     BorderBrush="#2D3039"
                     BorderThickness="1"
-                    CornerRadius="10"
-                    Width="330"
-                    Padding="14,10">
+                    CornerRadius="8"
+                    Padding="10,8"
+                    Margin="0,8,0,0">
                 <StackPanel Spacing="7">
-                    <!-- Row 1: General &amp; Safety Options -->
+                    <!-- Row 1: General & Safety Options -->
                     <StackPanel Spacing="4">
                         <TextBlock Text="GENERAL &amp; SAFETY" FontSize="9.5" FontWeight="Bold" Foreground="#9CA3AF"/>
                         <CheckBox IsChecked="{Binding StopOnEscape}" Content="Emergency stop on Escape" Foreground="#E5E7EB"/>
@@ -526,7 +519,7 @@
 
                     <Separator Background="#262932" Height="1" Margin="0,1"/>
 
-                    <!-- Row 3: Condensed Attribution (Single clean line) -->
+                    <!-- Attribution -->
                     <StackPanel Orientation="Horizontal" Spacing="6" HorizontalAlignment="Center" Margin="0,1,0,0">
                         <TextBlock Text="Vibe Coded by SheeshFr" FontSize="9.5" Foreground="#6B7280"/>
                         <TextBlock Text="•" FontSize="9.5" Foreground="#374151"/>
@@ -534,23 +527,15 @@
                     </StackPanel>
                 </StackPanel>
             </Border>
-        </Popup>
 
-
-        <!-- Profiles Slot Popup: Appears right underneath main window -->
-        <Popup x:Name="ProfilesPopup"
-               IsOpen="{Binding IsProfilesPopupOpen, Mode=TwoWay}"
-               PlacementTarget="{Binding #RootPanel}"
-               Placement="BottomEdgeAlignedLeft"
-               HorizontalOffset="0"
-               VerticalOffset="4"
-               IsLightDismissEnabled="True">
-            <Border Background="#1C1E24"
+            <!-- Inline Profiles Drawer -->
+            <Border IsVisible="{Binding IsProfilesPopupOpen}"
+                    Background="#181A20"
                     BorderBrush="#2D3039"
                     BorderThickness="1"
-                    CornerRadius="10"
-                    Width="330"
-                    Padding="14,10">
+                    CornerRadius="8"
+                    Padding="10,8"
+                    Margin="0,8,0,0">
                 <StackPanel Spacing="8">
                     <!-- Header -->
                     <Grid ColumnDefinitions="*,Auto">
@@ -650,7 +635,7 @@
                     </ScrollViewer>
                 </StackPanel>
             </Border>
-        </Popup>
+        </StackPanel>
     </Panel>
 </Window>
 
