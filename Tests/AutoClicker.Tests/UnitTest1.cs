@@ -715,4 +715,18 @@ public class WindowsInputTests
         Assert.Equal(25, vm2.ModifierDelayMs);
         Assert.True(vm2.BlockHotkey);
     }
+
+    [Fact]
+    public void GlobalKeyboardHook_Dispose_NeverThrowsObjectDisposedException_AndTerminatesFast()
+    {
+        var hook = new GlobalKeyboardHook();
+        var sw = Stopwatch.StartNew();
+        hook.Dispose();
+        sw.Stop();
+
+        // Calling Dispose multiple times must also be safe (idempotent)
+        hook.Dispose();
+
+        Assert.True(sw.ElapsedMilliseconds < 500, $"Dispose took {sw.ElapsedMilliseconds}ms, expected under 500ms");
+    }
 }

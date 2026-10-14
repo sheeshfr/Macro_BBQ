@@ -163,11 +163,26 @@ public class GlobalKeyboardHook : IGlobalInputHook
         _hookStartedEvent.Wait(2000);
     }
 
+    private void CancelSwallowTimeout()
+    {
+        try
+        {
+            var cts = _swallowTimeoutCts;
+            _swallowTimeoutCts = null;
+            if (cts != null)
+            {
+                cts.Cancel();
+                cts.Dispose();
+            }
+        }
+        catch { }
+    }
+
     private void ArmSwallowSafetyTimeout()
     {
-        _swallowTimeoutCts?.Cancel();
-        _swallowTimeoutCts = new CancellationTokenSource();
-        var cts = _swallowTimeoutCts;
+        CancelSwallowTimeout();
+        var cts = new CancellationTokenSource();
+        _swallowTimeoutCts = cts;
         Task.Delay(350, cts.Token).ContinueWith(t =>
         {
             if (!t.IsCanceled)
@@ -183,7 +198,7 @@ public class GlobalKeyboardHook : IGlobalInputHook
     {
         lock (_recordingLock)
         {
-            _swallowTimeoutCts?.Cancel();
+            CancelSwallowTimeout();
             _isHookRunning = false;
             uint threadId = _hookThreadId;
             Thread? thread = _hookThread;
@@ -194,7 +209,7 @@ public class GlobalKeyboardHook : IGlobalInputHook
             }
             if (thread != null && thread.IsAlive && Thread.CurrentThread != thread)
             {
-                thread.Join(500);
+                thread.Join(200);
             }
             _hookThread = null;
             _hookThreadId = 0;
@@ -268,7 +283,7 @@ public class GlobalKeyboardHook : IGlobalInputHook
                 if (vkCode == _swallowNextKeyUpVkCode)
                 {
                     _swallowNextKeyUpVkCode = 0;
-                    _swallowTimeoutCts?.Cancel();
+                    CancelSwallowTimeout();
                     StopRecordingHooks();
                     return (IntPtr)1; // Swallow key release so UI never sees it
                 }
@@ -333,7 +348,7 @@ public class GlobalKeyboardHook : IGlobalInputHook
             if (_swallowNextMouseUpMsg != 0 && msg == _swallowNextMouseUpMsg)
             {
                 _swallowNextMouseUpMsg = 0;
-                _swallowTimeoutCts?.Cancel();
+                CancelSwallowTimeout();
                 StopRecordingHooks();
                 return (IntPtr)1; // Swallow mouse release so UI never sees it
             }
@@ -403,14 +418,17 @@ public class GlobalKeyboardHook : IGlobalInputHook
 
     public void Dispose()
     {
-        _swallowTimeoutCts?.Cancel();
-        _swallowTimeoutCts?.Dispose();
+        CancelSwallowTimeout();
         _isPollerRunning = false;
-        _pollerThread?.Join(500);
+        _pollerThread?.Join(200);
 
         StopRecordingHooks();
 
-        _hookStartedEvent.Dispose();
+        try
+        {
+            _hookStartedEvent.Dispose();
+        }
+        catch { }
         GC.SuppressFinalize(this);
     }
 

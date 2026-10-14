@@ -136,7 +136,14 @@ public partial class MainWindow : Window
 
         if (DataContext is IDisposable disposable)
         {
-            disposable.Dispose();
+            try
+            {
+                disposable.Dispose();
+            }
+            catch
+            {
+                // Ensure disposal exceptions never crash the window shutdown
+            }
         }
     }
 
