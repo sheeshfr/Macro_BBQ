@@ -634,4 +634,85 @@ public class WindowsInputTests
         Assert.NotNull(loaded);
         Assert.NotEmpty(loaded.Profiles);
     }
+
+    [Fact]
+    public void Profile_Serialization_ContainsAllProperties()
+    {
+        var config = new AppConfig
+        {
+            ActiveProfileName = "GamerProfile",
+            IntervalMs = 42,
+            Profiles = new List<Profile>
+            {
+                new Profile
+                {
+                    Name = "GamerProfile",
+                    IntervalMs = 42,
+                    TriggerMode = TriggerMode.Toggle,
+                    HotkeyVkCode = 0x77, // F8
+                    PrimaryVkCode = 0x01,
+                    IsModifierEnabled = true,
+                    ModifierVkCode = 0x02,
+                    ModifierDelayMs = 12
+                }
+            }
+        };
+
+        string json = System.Text.Json.JsonSerializer.Serialize(config, typeof(AppConfig), AppConfigJsonContext.Default);
+        Assert.Contains("\"IntervalMs\": 42", json);
+        Assert.Contains("\"GamerProfile\"", json);
+        Assert.Contains("\"TriggerMode\": 0", json);
+        Assert.DoesNotContain("\"Profiles\": [\r\n    {}\r\n  ]", json);
+
+        var deserialized = (AppConfig?)System.Text.Json.JsonSerializer.Deserialize(json, typeof(AppConfig), AppConfigJsonContext.Default);
+        Assert.NotNull(deserialized);
+        Assert.Single(deserialized.Profiles);
+        Assert.Equal("GamerProfile", deserialized.Profiles[0].Name);
+        Assert.Equal(42, deserialized.Profiles[0].IntervalMs);
+        Assert.Equal(TriggerMode.Toggle, deserialized.Profiles[0].TriggerMode);
+        Assert.Equal(0x77, deserialized.Profiles[0].HotkeyVkCode);
+        Assert.True(deserialized.Profiles[0].IsModifierEnabled);
+        Assert.Equal(12, deserialized.Profiles[0].ModifierDelayMs);
+    }
+
+    [Fact]
+    public void MainViewModel_PersistenceAcrossSimulatedRestarts()
+    {
+        // 1. Initial run: modify settings
+        var initial = new AppConfig();
+        using (var vm1 = new MainViewModel(initial))
+        {
+            vm1.IntervalMs = 15;
+            vm1.SelectedTriggerMode = TriggerMode.Toggle;
+            vm1.HotkeyVkCode = 0x78; // F9
+            vm1.PrimaryVkCode = 0x58; // 'X'
+            vm1.IsModifierEnabled = true;
+            vm1.ModifierVkCode = 0x5A; // 'Z'
+            vm1.ModifierDelayMs = 25;
+            vm1.BlockHotkey = true;
+            vm1.SaveConfig();
+        }
+
+        // 2. Simulate fresh app start by loading from disk
+        var loaded = SettingsService.Load();
+        Assert.Equal(15, loaded.IntervalMs);
+        Assert.Equal(TriggerMode.Toggle, loaded.TriggerMode);
+        Assert.Equal(0x78, loaded.HotkeyVkCode);
+        Assert.Equal(0x58, loaded.PrimaryVkCode);
+        Assert.True(loaded.IsModifierEnabled);
+        Assert.Equal(0x5A, loaded.ModifierVkCode);
+        Assert.Equal(25, loaded.ModifierDelayMs);
+        Assert.True(loaded.BlockHotkey);
+
+        // 3. Initialize fresh MainViewModel with loaded config
+        using var vm2 = new MainViewModel(loaded);
+        Assert.Equal(15, vm2.IntervalMs);
+        Assert.Equal(TriggerMode.Toggle, vm2.SelectedTriggerMode);
+        Assert.Equal(0x78, vm2.HotkeyVkCode);
+        Assert.Equal(0x58, vm2.PrimaryVkCode);
+        Assert.True(vm2.IsModifierEnabled);
+        Assert.Equal(0x5A, vm2.ModifierVkCode);
+        Assert.Equal(25, vm2.ModifierDelayMs);
+        Assert.True(vm2.BlockHotkey);
+    }
 }

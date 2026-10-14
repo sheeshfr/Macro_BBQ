@@ -5,59 +5,114 @@ using AutoClicker.Services.Native;
 
 namespace AutoClicker.Models;
 
-public partial class Profile : ObservableObject
+public class Profile : ObservableObject
 {
-    [ObservableProperty]
-    [NotifyPropertyChangedFor(nameof(SummaryText))]
     private string _name = "Default";
+    public string Name
+    {
+        get => _name;
+        set { SetProperty(ref _name, value); OnPropertyChanged(nameof(SummaryText)); }
+    }
 
-    [ObservableProperty]
-    [NotifyPropertyChangedFor(nameof(SummaryText))]
     private int _intervalMs = 50;
+    public int IntervalMs
+    {
+        get => _intervalMs;
+        set { SetProperty(ref _intervalMs, value); OnPropertyChanged(nameof(SummaryText)); }
+    }
 
-    [ObservableProperty]
-    [NotifyPropertyChangedFor(nameof(SummaryText))]
     private TriggerMode _triggerMode = TriggerMode.Hold;
+    public TriggerMode TriggerMode
+    {
+        get => _triggerMode;
+        set { SetProperty(ref _triggerMode, value); OnPropertyChanged(nameof(SummaryText)); }
+    }
 
-    [ObservableProperty]
-    [NotifyPropertyChangedFor(nameof(SummaryText))]
     private int _hotkeyVkCode = 0x75; // F6
+    public int HotkeyVkCode
+    {
+        get => _hotkeyVkCode;
+        set { SetProperty(ref _hotkeyVkCode, value); OnPropertyChanged(nameof(SummaryText)); }
+    }
 
-    [ObservableProperty]
     private MouseButtonType _mouseButton = MouseButtonType.Left;
+    public MouseButtonType MouseButton
+    {
+        get => _mouseButton;
+        set => SetProperty(ref _mouseButton, value);
+    }
 
-    [ObservableProperty]
     private int _primaryVkCode = 0x01; // Left Click
+    public int PrimaryVkCode
+    {
+        get => _primaryVkCode;
+        set => SetProperty(ref _primaryVkCode, value);
+    }
 
-    [ObservableProperty]
-    [NotifyPropertyChangedFor(nameof(SummaryText))]
     private bool _isModifierEnabled = false;
+    public bool IsModifierEnabled
+    {
+        get => _isModifierEnabled;
+        set { SetProperty(ref _isModifierEnabled, value); OnPropertyChanged(nameof(SummaryText)); }
+    }
 
-    [ObservableProperty]
     private MouseButtonType _modifierButton = MouseButtonType.Right;
+    public MouseButtonType ModifierButton
+    {
+        get => _modifierButton;
+        set => SetProperty(ref _modifierButton, value);
+    }
 
-    [ObservableProperty]
     private int _modifierVkCode = 0x02; // Right Click
+    public int ModifierVkCode
+    {
+        get => _modifierVkCode;
+        set => SetProperty(ref _modifierVkCode, value);
+    }
 
-    [ObservableProperty]
     private ModifierAction _modifierAction = ModifierAction.Hold;
+    public ModifierAction ModifierAction
+    {
+        get => _modifierAction;
+        set => SetProperty(ref _modifierAction, value);
+    }
 
-    [ObservableProperty]
     private ModifierOrder _modifierOrder = ModifierOrder.ModifierFirst;
+    public ModifierOrder ModifierOrder
+    {
+        get => _modifierOrder;
+        set => SetProperty(ref _modifierOrder, value);
+    }
 
-    [ObservableProperty]
     private int _modifierDelayMs = 1;
+    public int ModifierDelayMs
+    {
+        get => _modifierDelayMs;
+        set => SetProperty(ref _modifierDelayMs, value);
+    }
 
-    [ObservableProperty]
     private bool _blockHotkey = false;
+    public bool BlockHotkey
+    {
+        get => _blockHotkey;
+        set => SetProperty(ref _blockHotkey, value);
+    }
 
     // Runtime UI state (not serialized to JSON)
     [JsonIgnore]
-    [ObservableProperty]
+    public bool IsActive
+    {
+        get => _isActive;
+        set => SetProperty(ref _isActive, value);
+    }
     private bool _isActive = false;
 
     [JsonIgnore]
-    [ObservableProperty]
+    public bool CanDelete
+    {
+        get => _canDelete;
+        set => SetProperty(ref _canDelete, value);
+    }
     private bool _canDelete = false;
 
     [JsonIgnore]

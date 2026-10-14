@@ -40,7 +40,7 @@ public class AppConfig
 [JsonSerializable(typeof(AppConfig))]
 [JsonSerializable(typeof(Profile))]
 [JsonSerializable(typeof(List<Profile>))]
-internal partial class AppConfigJsonContext : JsonSerializerContext
+public partial class AppConfigJsonContext : JsonSerializerContext
 {
 }
 
@@ -175,6 +175,32 @@ public static class SettingsService
                 }
             };
             config.ActiveProfileName = "Default";
+        }
+        else
+        {
+            foreach (var p in config.Profiles)
+            {
+                if (string.IsNullOrWhiteSpace(p.Name))
+                {
+                    p.Name = "Default";
+                }
+                if (p.IntervalMs <= 0)
+                {
+                    p.IntervalMs = config.IntervalMs > 0 ? config.IntervalMs : 50;
+                }
+                if (p.HotkeyVkCode <= 0)
+                {
+                    p.HotkeyVkCode = config.HotkeyVkCode != 0 ? config.HotkeyVkCode : 0x75;
+                }
+                if (p.PrimaryVkCode <= 0)
+                {
+                    p.PrimaryVkCode = config.PrimaryVkCode != 0 ? config.PrimaryVkCode : 1;
+                }
+                if (p.ModifierDelayMs <= 0)
+                {
+                    p.ModifierDelayMs = Math.Max(1, config.ModifierDelayMs);
+                }
+            }
         }
 
         if (string.IsNullOrWhiteSpace(config.ActiveProfileName) ||
