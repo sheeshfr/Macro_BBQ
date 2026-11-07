@@ -1,17 +1,20 @@
 <div align="center">
   <img src="logo.png" alt="Macro BBQ Logo" width="128" />
   <h1>Macro BBQ</h1>
+  <p>I got tired of searching for decent auto-clickers so I made one for myself. Now my pistol is a machine gun in Remnant 2! B)</p>
+  <p>Vibe coded by <a href="https://github.com/sheeshfr"><b>SheeshFr</b></a></p>
 </div>
 
+---
+
+## Features
+
+- **Custom Hotkey Binding:** Bind any keyboard key or mouse button as your trigger in one click.
+- **High-Speed Interval Control:** Set your exact click interval in milliseconds (e.g., `50ms` = 20 CPS / clicks per second).
+- **Toggle or Hold Modes:** Run as a latch-on/latch-off toggle switch or active only while your trigger button is held down.
+- **Secondary Modifier Slot (⚡ Mod):** Assign an optional secondary button (such as Right Click for Aim Down Sights) with independent Hold/Spam behavior, execution order, and initial delay.
+
 <div align="center">
-  <img src="https://img.shields.io/badge/platform-Windows%2010%20%2F%2011-287cff?style=flat-square&color=9be1e6&labelColor=e4896e" alt="Platform: Windows 10 & 11">
-  <a href="LICENSE"><img src="https://img.shields.io/badge/license-GPL--3.0-blue?style=flat-square&color=9be1e6&labelColor=e4896e" alt="License"></a>
-
-  <p>I got tired of searching for decent auto-clickers so I made one for myself. Now my pistol is a machine gun in Remnant 2! B)</p>
-  <p>Vibe Coded by <a href="https://github.com/sheeshfr"><b>SheeshFr</b></a></p>
-
-  <br />
-
   <img src="screenshot.png" alt="Macro BBQ" width="400" />
 </div>
 
